@@ -50,4 +50,4 @@
   loop_control:
     label: "{{ item | basename }}"
   when: __node_exporter_dirs_to_remove | length > 0
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true

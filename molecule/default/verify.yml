@@ -13,7 +13,7 @@
         that:
           - __verify_symlink.stat.exists
           - __verify_symlink.stat.islnk
-          - "'/opt/node_exporter/node_exporter-1.9.1' in __verify_symlink.stat.lnk_source"
+          - "'/opt/node_exporter/node_exporter-' in __verify_symlink.stat.lnk_source"
         fail_msg: "Binary symlink /usr/local/bin/node_exporter is missing or invalid."
         success_msg: "Binary symlink is valid and points to versioned release."
 

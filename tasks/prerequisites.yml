@@ -7,7 +7,7 @@
   ansible.builtin.package:
     name: "{{ __node_exporter_packages }}"
     state: present
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | prerequisites | Create base installation directory"
   ansible.builtin.file:
@@ -16,7 +16,7 @@
     owner: "root"
     group: "root"
     mode: "0755"
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | prerequisites | Create textfile collector directory"
   ansible.builtin.file:
@@ -28,4 +28,4 @@
   when:
     - node_exporter_textfile_directory is defined
     - node_exporter_textfile_directory != ""
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true

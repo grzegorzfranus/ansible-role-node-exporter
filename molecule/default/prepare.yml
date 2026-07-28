@@ -3,6 +3,13 @@
   hosts: all
   gather_facts: true
   tasks:
+    - name: Ensure sudo PAM account management permits container privilege escalation
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/sudo
+        regexp: '^account\s+include\s+system-auth'
+        line: 'account sufficient pam_permit.so'
+      failed_when: false
+
     - name: Ensure python3-pip and ca-certificates are installed
       ansible.builtin.package:
         name:

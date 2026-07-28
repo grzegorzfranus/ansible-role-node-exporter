@@ -6,7 +6,7 @@
 - name: "Node-Exporter | service | Render systemd service unit"
   ansible.builtin.template:
     src: "systemd/node_exporter.service.j2"
-    dest: "/etc/systemd/system/node_exporter.service"
+    dest: "/etc/systemd/system/{{ __node_exporter_service_name }}.service"
     owner: "root"
     group: "root"
     mode: "0644"
@@ -14,7 +14,7 @@
   notify:
     - "Node-Exporter | handlers | Reload systemd daemon"
     - "Node-Exporter | handlers | Restart service"
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | service | Flush handlers"
   ansible.builtin.meta: flush_handlers
@@ -24,4 +24,4 @@
     name: "{{ __node_exporter_service_name }}"
     state: "{{ 'started' if (node_exporter_service_enabled | bool) else 'stopped' }}"
     enabled: "{{ node_exporter_service_enabled | bool }}"
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true

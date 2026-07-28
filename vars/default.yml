@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Ansible Role Default Fallback OS Variables: grzegorzfranus.node_exporter
+# ==============================================================================
+
+# Default fallback prerequisite package list for unsupported or generic OS families
+__node_exporter_packages:
+  - "tar"
+  - "ca-certificates"

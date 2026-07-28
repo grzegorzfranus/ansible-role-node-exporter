@@ -5,8 +5,7 @@
 
 - name: "Node-Exporter | configure | Assemble command-line arguments"
   ansible.builtin.set_fact:
-    __node_exporter_flag_listen: >-
-      --web.listen-address={{ node_exporter_listen_address if node_exporter_listen_address != "" else "" }}:{{ node_exporter_port }}
+    __node_exporter_flag_listen: "--web.listen-address={{ node_exporter_listen_address }}:{{ node_exporter_port }}"
     __node_exporter_flag_telemetry: "--web.telemetry-path={{ node_exporter_telemetry_path }}"
     __node_exporter_flags_enabled: "{{ node_exporter_enabled_collectors | map('regex_replace', '^(.*)$', '--collector.\\1') | list }}"
     __node_exporter_flags_disabled: "{{ node_exporter_disabled_collectors | map('regex_replace', '^(.*)$', '--no-collector.\\1') | list }}"

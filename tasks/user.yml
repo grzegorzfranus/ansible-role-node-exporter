@@ -8,7 +8,7 @@
     name: "{{ node_exporter_group }}"
     state: present
     system: true
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | user | Create system user"
   ansible.builtin.user:
@@ -18,4 +18,4 @@
     system: true
     shell: "/sbin/nologin"
     create_home: false
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true

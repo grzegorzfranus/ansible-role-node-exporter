@@ -6,7 +6,7 @@
 - name: "Node-Exporter | handlers | Reload systemd daemon"
   ansible.builtin.systemd_service:
     daemon_reload: true
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | handlers | Restart service"
   ansible.builtin.systemd_service:
@@ -15,4 +15,4 @@
   when:
     - node_exporter_service_enabled | bool
     - node_exporter_state | lower == "present"
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true

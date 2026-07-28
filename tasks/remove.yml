@@ -9,7 +9,7 @@
     state: stopped
     enabled: false
   failed_when: false
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Remove systemd service unit file"
   ansible.builtin.file:
@@ -17,7 +17,7 @@
     state: absent
   notify:
     - "Node-Exporter | handlers | Reload systemd daemon"
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Flush handlers to apply unit removal"
   ansible.builtin.meta: flush_handlers
@@ -26,13 +26,13 @@
   ansible.builtin.file:
     path: "{{ node_exporter_bin_link }}"
     state: absent
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Remove installation base directory"
   ansible.builtin.file:
     path: "{{ node_exporter_base_dir }}"
     state: absent
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Remove textfile collector directory"
   ansible.builtin.file:
@@ -41,17 +41,17 @@
   when:
     - node_exporter_textfile_directory is defined
     - node_exporter_textfile_directory != ""
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Remove system user"
   ansible.builtin.user:
     name: "{{ node_exporter_user }}"
     state: absent
     remove: false
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
 
 - name: "Node-Exporter | remove | Remove system group"
   ansible.builtin.group:
     name: "{{ node_exporter_group }}"
     state: absent
-  become: "{{ ansible_user_id != 'root' }}"
+  become: true
