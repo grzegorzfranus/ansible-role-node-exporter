@@ -276,6 +276,9 @@ sudo journalctl -u node_exporter.service -f
    ansible-playbook -i inventory/hosts site.yml --tags node_exporter
    ```
 
+> [!IMPORTANT]
+> To ensure the running service restarts with the newly installed binary during an upgrade, execute the role with `node_exporter_role_action: "all"` (default) or include both `node_exporter_install` and `node_exporter_service` tags. Executing exclusively with `node_exporter_role_action: "install"` updates the binary asset and symlink on disk but intentionally skips restarting the running systemd service process.
+
 ### What Happens During Upgrade
 
 | Step | Action | Impact on scraping |
