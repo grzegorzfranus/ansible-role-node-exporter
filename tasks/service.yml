@@ -1,0 +1,27 @@
+---
+# ==============================================================================
+# Ansible Role Systemd Service: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | service | Render systemd service unit"
+  ansible.builtin.template:
+    src: "systemd/node_exporter.service.j2"
+    dest: "/etc/systemd/system/{{ __node_exporter_service_name }}.service"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+    backup: true
+  notify:
+    - "Node-Exporter | handlers | Reload systemd daemon"
+    - "Node-Exporter | handlers | Restart service"
+  become: true
+
+- name: "Node-Exporter | service | Flush handlers"
+  ansible.builtin.meta: flush_handlers
+
+- name: "Node-Exporter | service | Manage node_exporter service state"
+  ansible.builtin.systemd_service:
+    name: "{{ __node_exporter_service_name }}"
+    state: "{{ 'started' if (node_exporter_service_enabled | bool) else 'stopped' }}"
+    enabled: "{{ node_exporter_service_enabled | bool }}"
+  become: true

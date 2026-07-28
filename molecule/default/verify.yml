@@ -1,0 +1,88 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Verify | Check active binary symlink"
+      ansible.builtin.stat:
+        path: "/usr/local/bin/node_exporter"
+      register: __verify_symlink
+
+    - name: "Verify | Assert binary symlink properties"
+      ansible.builtin.assert:
+        that:
+          - __verify_symlink.stat.exists
+          - __verify_symlink.stat.islnk
+          - "'/opt/node_exporter/node_exporter-' in __verify_symlink.stat.lnk_source"
+        fail_msg: "Binary symlink /usr/local/bin/node_exporter is missing or invalid."
+        success_msg: "Binary symlink is valid and points to versioned release."
+
+    - name: "Verify | Check targeted binary permissions"
+      ansible.builtin.stat:
+        path: "{{ __verify_symlink.stat.lnk_source }}"
+      register: __verify_binary
+
+    - name: "Verify | Assert binary ownership and permissions"
+      ansible.builtin.assert:
+        that:
+          - __verify_binary.stat.exists
+          - __verify_binary.stat.pw_name == 'root'
+          - __verify_binary.stat.gr_name == 'root'
+          - __verify_binary.stat.mode == '0755'
+        fail_msg: "Binary permissions or ownership are invalid."
+        success_msg: "Binary ownership root:root 0755 verified."
+
+    - name: "Verify | Check system user node_exporter"
+      ansible.builtin.getent:
+        database: passwd
+        key: node_exporter
+
+    - name: "Verify | Assert system user shell nologin"
+      ansible.builtin.assert:
+        that:
+          - getent_passwd.node_exporter[5] == '/sbin/nologin' or getent_passwd.node_exporter[5] == '/usr/sbin/nologin'
+        fail_msg: "System user node_exporter shell is not nologin."
+        success_msg: "System user node_exporter has nologin shell."
+
+    - name: "Verify | Check systemd service status"
+      ansible.builtin.systemd_service:
+        name: node_exporter
+      register: __verify_service
+
+    - name: "Verify | Assert systemd service active and enabled"
+      ansible.builtin.assert:
+        that:
+          - __verify_service.status.ActiveState == 'active'
+          - __verify_service.status.UnitFileState == 'enabled' or __verify_service.status.UnitFileState == 'linked'
+        fail_msg: "node_exporter service is not active or enabled."
+        success_msg: "node_exporter systemd service is active and enabled."
+
+    - name: "Verify | Read systemd unit file contents"
+      ansible.builtin.slurp:
+        src: "/etc/systemd/system/node_exporter.service"
+      register: __verify_unit_slurp
+
+    - name: "Verify | Assert systemd unit After, Wants, and ExecStart directives"
+      ansible.builtin.assert:
+        that:
+          - "'After=network-online.target' in (__verify_unit_slurp.content | b64decode)"
+          - "'Wants=network-online.target' in (__verify_unit_slurp.content | b64decode)"
+          - "'ExecStart=/usr/local/bin/node_exporter' in (__verify_unit_slurp.content | b64decode)"
+        fail_msg: "Systemd unit file does not contain expected After, Wants, or ExecStart directives."
+        success_msg: "Systemd unit file directives (After, Wants, ExecStart) verified."
+
+    - name: "Verify | Query metrics HTTP endpoint"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:9100/metrics"
+        method: GET
+        status_code: 200
+        return_content: true
+      register: __verify_metrics
+
+    - name: "Verify | Assert metrics endpoint contents"
+      ansible.builtin.assert:
+        that:
+          - __verify_metrics.status == 200
+          - "'node_cpu_seconds_total' in __verify_metrics.content"
+        fail_msg: "Metrics endpoint GET returned status {{ __verify_metrics.status }}."
+        success_msg: "Metrics endpoint returned 200 OK with expected metric data."

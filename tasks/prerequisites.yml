@@ -1,0 +1,31 @@
+---
+# ==============================================================================
+# Ansible Role Prerequisites: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | prerequisites | Install OS prerequisite packages"
+  ansible.builtin.package:
+    name: "{{ __node_exporter_packages }}"
+    state: present
+  become: true
+
+- name: "Node-Exporter | prerequisites | Create base installation directory"
+  ansible.builtin.file:
+    path: "{{ node_exporter_base_dir }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  become: true
+
+- name: "Node-Exporter | prerequisites | Create textfile collector directory"
+  ansible.builtin.file:
+    path: "{{ node_exporter_textfile_directory }}"
+    state: directory
+    owner: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    mode: "0755"
+  when:
+    - node_exporter_textfile_directory is defined
+    - node_exporter_textfile_directory != ""
+  become: true

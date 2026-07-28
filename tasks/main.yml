@@ -1,0 +1,105 @@
+---
+# ==============================================================================
+# Ansible Role Task Orchestrator: grzegorzfranus.node_exporter
+# ==============================================================================
+# Flow: include_vars → assert → user → prerequisites → install → cleanup → configure → service → test
+# ==============================================================================
+
+- name: "Node-Exporter | main | Include OS-specific variables"
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "{{ ansible_facts['distribution'] | lower }}_{{ ansible_facts['distribution_version'] | lower }}.yml"
+        - "{{ ansible_facts['distribution'] | lower }}_{{ ansible_facts['distribution_major_version'] | lower }}.yml"
+        - "{{ ansible_facts['os_family'] | lower }}_{{ ansible_facts['distribution_major_version'] | lower }}.yml"
+        - "{{ ansible_facts['distribution'] | lower }}.yml"
+        - "{{ ansible_facts['os_family'] | lower }}.yml"
+        - "default.yml"
+      paths:
+        - "vars"
+      skip: true
+  tags:
+    - node_exporter_setup
+    - node_exporter_install
+    - node_exporter_configure
+    - node_exporter_service
+    - node_exporter_remove
+    - node_exporter_test
+
+- name: "Node-Exporter | main | Run variable assertion tasks"
+  ansible.builtin.include_tasks: "assert.yml"
+  tags:
+    - node_exporter_setup
+    - node_exporter_install
+    - node_exporter_configure
+    - node_exporter_service
+    - node_exporter_remove
+    - node_exporter_test
+
+- name: "Node-Exporter | main | Run removal tasks"
+  ansible.builtin.include_tasks: "remove.yml"
+  when:
+    - node_exporter_state | lower == "absent"
+    - node_exporter_role_action in ["all", "remove"]
+  tags:
+    - node_exporter_remove
+
+- name: "Node-Exporter | main | Run service user and group tasks"
+  ansible.builtin.include_tasks: "user.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "prerequisites", "install"]
+  tags:
+    - node_exporter_setup
+    - node_exporter_install
+
+- name: "Node-Exporter | main | Run prerequisite tasks"
+  ansible.builtin.include_tasks: "prerequisites.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "prerequisites", "install"]
+  tags:
+    - node_exporter_setup
+    - node_exporter_install
+
+- name: "Node-Exporter | main | Run installation tasks"
+  ansible.builtin.include_tasks: "install.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "install"]
+  tags:
+    - node_exporter_install
+
+- name: "Node-Exporter | main | Run version cleanup tasks"
+  ansible.builtin.include_tasks: "cleanup.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "install"]
+  tags:
+    - node_exporter_install
+
+- name: "Node-Exporter | main | Run configuration assembly tasks"
+  ansible.builtin.include_tasks: "configure.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "configure", "service"]
+  tags:
+    - node_exporter_configure
+    - node_exporter_service
+
+- name: "Node-Exporter | main | Run systemd service tasks"
+  ansible.builtin.include_tasks: "service.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "service"]
+  tags:
+    - node_exporter_service
+
+- name: "Node-Exporter | main | Run health check test tasks"
+  ansible.builtin.include_tasks: "test.yml"
+  when:
+    - node_exporter_state | lower == "present"
+    - node_exporter_run_test | bool
+    - node_exporter_role_action in ["all", "test"]
+  tags:
+    - node_exporter_test

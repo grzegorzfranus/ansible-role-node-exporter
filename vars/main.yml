@@ -1,0 +1,22 @@
+---
+# ==============================================================================
+# Ansible Role Variables: grzegorzfranus.node_exporter
+# ==============================================================================
+# Internal variables and constants. Not intended to be overridden in inventory.
+# ==============================================================================
+
+# Upstream GitHub repository for node_exporter binaries
+__node_exporter_repo: "prometheus/node_exporter"
+
+# Architecture mapping from ansible_facts['architecture'] to release asset naming
+__node_exporter_arch_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+  armv7l: "armv7"
+  i386: "386"
+
+# Normalized architecture string derived from ansible_facts
+__node_exporter_arch: "{{ __node_exporter_arch_map[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
+
+# Systemd service unit name
+__node_exporter_service_name: "node_exporter"

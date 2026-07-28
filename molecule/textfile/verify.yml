@@ -1,0 +1,50 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Verify | Check textfile collector directory permissions"
+      ansible.builtin.stat:
+        path: "/var/lib/node_exporter/textfile_collector"
+      register: __verify_textfile_dir
+
+    - name: "Verify | Assert textfile directory exists and owned by node_exporter"
+      ansible.builtin.assert:
+        that:
+          - __verify_textfile_dir.stat.exists
+          - __verify_textfile_dir.stat.isdir
+          - __verify_textfile_dir.stat.pw_name == 'node_exporter'
+          - __verify_textfile_dir.stat.gr_name == 'node_exporter'
+        fail_msg: "Textfile directory /var/lib/node_exporter/textfile_collector missing or invalid ownership."
+        success_msg: "Textfile collector directory verified with owner node_exporter:node_exporter."
+
+    - name: "Verify | Check systemd unit file for ReadWritePaths"
+      ansible.builtin.command:
+        cmd: "grep 'ReadWritePaths=' /etc/systemd/system/node_exporter.service"
+      register: __verify_unit_rwp
+      changed_when: false
+
+    - name: "Verify | Assert ReadWritePaths contains textfile directory"
+      ansible.builtin.assert:
+        that:
+          - __verify_unit_rwp.rc == 0
+          - "'/var/lib/node_exporter/textfile_collector' in __verify_unit_rwp.stdout"
+        fail_msg: "Systemd unit ReadWritePaths does not contain textfile collector directory."
+        success_msg: "Systemd unit ReadWritePaths successfully contains textfile collector directory."
+
+    - name: "Verify | Query metrics HTTP endpoint for custom metric"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:9100/metrics"
+        method: GET
+        status_code: 200
+        return_content: true
+      register: __verify_metrics
+
+    - name: "Verify | Assert custom textfile metric present in metrics output"
+      ansible.builtin.assert:
+        that:
+          - __verify_metrics.status == 200
+          - "'custom_test_metric' in __verify_metrics.content"
+          - "'42' in __verify_metrics.content"
+        fail_msg: "Custom textfile metric 'custom_test_metric' was not exposed by node_exporter."
+        success_msg: "Custom textfile collector metric successfully exposed in /metrics."

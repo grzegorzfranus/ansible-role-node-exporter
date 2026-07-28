@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Ansible Role Variables: grzegorzfranus.node_exporter (RedHat OS Family)
+# ==============================================================================
+
+# OS-specific prerequisite package dependencies for Enterprise Linux / RHEL / Rocky
+__node_exporter_packages:
+  - "tar"
+  - "ca-certificates"

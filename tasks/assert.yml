@@ -1,0 +1,176 @@
+---
+# ==============================================================================
+# Ansible Role Assertions: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | assert | Validate node_exporter_role_action"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_role_action is defined
+      - node_exporter_role_action is string
+      - node_exporter_role_action in ["all", "prerequisites", "install", "configure", "service", "remove", "test"]
+    fail_msg: "node_exporter_role_action must be one of: all, prerequisites, install, configure, service, remove, test."
+    success_msg: "node_exporter_role_action is valid: '{{ node_exporter_role_action }}'."
+
+- name: "Node-Exporter | assert | Validate node_exporter_state"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_state is defined
+      - node_exporter_state is string
+      - node_exporter_state in ["present", "absent"]
+    fail_msg: "node_exporter_state must be 'present' or 'absent'."
+    success_msg: "node_exporter_state is valid: '{{ node_exporter_state }}'."
+
+- name: "Node-Exporter | assert | Validate boolean flags"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_service_enabled is defined
+      - node_exporter_service_enabled is boolean
+      - node_exporter_run_test is defined
+      - node_exporter_run_test is boolean
+      - node_exporter_verify_checksum is defined
+      - node_exporter_verify_checksum is boolean
+    fail_msg: "Boolean flags must be boolean."
+    success_msg: "Boolean flags are valid."
+
+- name: "Node-Exporter | assert | Validate node_exporter_version"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_version is defined
+      - node_exporter_version is string
+      - node_exporter_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+    fail_msg: "node_exporter_version must be a semantic version string (e.g. 1.9.1)."
+    success_msg: "node_exporter_version is valid: '{{ node_exporter_version }}'."
+
+- name: "Node-Exporter | assert | Validate directory and link paths"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_base_dir is defined
+      - node_exporter_base_dir is string
+      - node_exporter_base_dir is match('^/')
+      - node_exporter_bin_link is defined
+      - node_exporter_bin_link is string
+      - node_exporter_bin_link is match('^/')
+      - node_exporter_download_dir is defined
+      - node_exporter_download_dir is string
+      - node_exporter_download_dir is match('^/')
+    fail_msg: "Paths (base_dir, bin_link, download_dir) must be absolute paths starting with '/'."
+    success_msg: "Paths are valid."
+
+- name: "Node-Exporter | assert | Validate node_exporter_retain_versions"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_retain_versions is defined
+      - node_exporter_retain_versions is number
+      - node_exporter_retain_versions | int >= 1
+    fail_msg: "node_exporter_retain_versions must be an integer >= 1."
+    success_msg: "node_exporter_retain_versions is valid: {{ node_exporter_retain_versions }}."
+
+- name: "Node-Exporter | assert | Validate node_exporter_download_timeout"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_download_timeout is defined
+      - node_exporter_download_timeout is number
+      - node_exporter_download_timeout | int >= 1
+    fail_msg: "node_exporter_download_timeout must be a positive integer >= 1."
+    success_msg: "node_exporter_download_timeout is valid: {{ node_exporter_download_timeout }}."
+
+- name: "Node-Exporter | assert | Validate cross-field download URL and checksum"
+  ansible.builtin.assert:
+    that:
+      - >-
+        node_exporter_download_url == "" or
+        (node_exporter_checksum is defined and node_exporter_checksum != "")
+    fail_msg: "When node_exporter_download_url is set, node_exporter_checksum must also be provided explicitly."
+    success_msg: "Download URL and checksum settings are valid."
+
+- name: "Node-Exporter | assert | Validate user and group"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_user is defined
+      - node_exporter_user is string
+      - node_exporter_user | length > 0
+      - node_exporter_group is defined
+      - node_exporter_group is string
+      - node_exporter_group | length > 0
+    fail_msg: "node_exporter_user and node_exporter_group must be non-empty strings."
+    success_msg: "User and group settings are valid."
+
+- name: "Node-Exporter | assert | Validate node_exporter_listen_address"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_listen_address is defined
+      - node_exporter_listen_address is string
+    fail_msg: "node_exporter_listen_address must be a string."
+    success_msg: "node_exporter_listen_address is valid: '{{ node_exporter_listen_address }}'."
+
+- name: "Node-Exporter | assert | Validate node_exporter_port"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_port is defined
+      - node_exporter_port is number
+      - node_exporter_port | int >= 1
+      - node_exporter_port | int <= 65535
+    fail_msg: "node_exporter_port must be an integer between 1 and 65535."
+    success_msg: "node_exporter_port is valid: {{ node_exporter_port }}."
+
+- name: "Node-Exporter | assert | Validate node_exporter_telemetry_path"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_telemetry_path is defined
+      - node_exporter_telemetry_path is string
+      - node_exporter_telemetry_path is match('^/')
+    fail_msg: "node_exporter_telemetry_path must be an absolute URL path starting with '/'."
+    success_msg: "node_exporter_telemetry_path is valid: '{{ node_exporter_telemetry_path }}'."
+
+- name: "Node-Exporter | assert | Validate collector list types"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_enabled_collectors is defined
+      - node_exporter_enabled_collectors is sequence and not node_exporter_enabled_collectors is string
+      - node_exporter_disabled_collectors is defined
+      - node_exporter_disabled_collectors is sequence and not node_exporter_disabled_collectors is string
+      - node_exporter_extra_args is defined
+      - node_exporter_extra_args is sequence and not node_exporter_extra_args is string
+    fail_msg: "Collector options (enabled_collectors, disabled_collectors, extra_args) must be lists."
+    success_msg: "Collector list options are valid lists."
+
+- name: "Node-Exporter | assert | Validate textfile directory and ProtectSystem ReadWritePaths"
+  ansible.builtin.assert:
+    that:
+      - >-
+        node_exporter_textfile_directory == "" or
+        (node_exporter_textfile_directory is match('^/') and
+         node_exporter_textfile_directory in node_exporter_read_write_paths)
+    fail_msg: >-
+      When node_exporter_textfile_directory is configured, it must be an absolute path starting with '/'
+      AND must be listed in node_exporter_read_write_paths so systemd ProtectSystem=strict permits access.
+    success_msg: "Textfile directory and ReadWritePaths integration is valid."
+
+- name: "Node-Exporter | assert | Validate systemd units and restart settings"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_after_units is defined
+      - node_exporter_after_units is sequence and not node_exporter_after_units is string
+      - node_exporter_wants_units is defined
+      - node_exporter_wants_units is sequence and not node_exporter_wants_units is string
+      - node_exporter_read_write_paths is defined
+      - node_exporter_read_write_paths is sequence and not node_exporter_read_write_paths is string
+      - node_exporter_restart_policy is defined
+      - node_exporter_restart_policy in ["always", "on-failure", "on-abnormal", "no"]
+      - node_exporter_restart_sec is defined
+      - node_exporter_restart_sec is number
+      - node_exporter_limit_nofile is defined
+      - node_exporter_limit_nofile is number
+      - node_exporter_limit_nofile | int >= 1024
+    fail_msg: "Systemd unit hardening settings and resource limits are invalid."
+    success_msg: "Systemd unit settings are valid."
+
+- name: "Node-Exporter | assert | Validate node_exporter_dashboard_urls"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_dashboard_urls is defined
+      - node_exporter_dashboard_urls is sequence and not node_exporter_dashboard_urls is string
+      - node_exporter_dashboard_urls | select('match', '^https://') | list | length == node_exporter_dashboard_urls | length
+    fail_msg: "node_exporter_dashboard_urls must be a list of HTTPS URL strings starting with 'https://'."
+    success_msg: "node_exporter_dashboard_urls is valid list of HTTPS URLs."

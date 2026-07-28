@@ -1,0 +1,9 @@
+---
+# ==============================================================================
+# Ansible Role Variables: grzegorzfranus.node_exporter (Debian/Ubuntu OS Family)
+# ==============================================================================
+
+# OS-specific prerequisite package dependencies for Debian/Ubuntu
+__node_exporter_packages:
+  - "tar"
+  - "ca-certificates"

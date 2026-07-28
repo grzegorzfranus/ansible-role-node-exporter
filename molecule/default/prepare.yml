@@ -1,0 +1,17 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ensure sudo PAM account management permits container privilege escalation
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/sudo
+        regexp: '^(account|@include)\s+.*$'
+        line: 'account sufficient pam_permit.so'
+      failed_when: false
+
+    - name: Ensure ca-certificates is installed
+      ansible.builtin.package:
+        name:
+          - ca-certificates
+        state: present

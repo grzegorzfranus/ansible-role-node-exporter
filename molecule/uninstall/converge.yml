@@ -1,0 +1,48 @@
+---
+- name: molecule | Converge
+  hosts: all
+
+  pre_tasks:
+    - name: Converge | Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+      when: >
+        ansible_facts['os_family'] == "Debian"
+
+    - name: Converge | Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: true
+      changed_when: false
+      when: >
+        ansible_facts['os_family'] == "RedHat"
+
+    - name: Converge | Wait for systemd to complete initialization
+      ansible.builtin.command: systemctl is-system-running
+      register: __converge_systemctl_status
+      until: >
+        'running' in __converge_systemctl_status.stdout or
+        'degraded' in __converge_systemctl_status.stdout
+      retries: 30
+      delay: 5
+      when: >
+        ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+      failed_when: __converge_systemctl_status.rc > 1
+
+  tasks:
+    - name: Converge | Install node_exporter role first
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."
+      vars:
+        node_exporter_state: "present"
+
+    - name: Converge | Teardown node_exporter role (state absent)
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."
+      vars:
+        node_exporter_state: "absent"
+
+    - name: Converge | Flush handlers
+      ansible.builtin.meta: flush_handlers
