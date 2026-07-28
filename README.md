@@ -2,7 +2,7 @@
 
 | Source | Version | CI | License |
 | :--- | :--- | :--- | :--- |
-| [![GitHub](https://img.shields.io/badge/github-grzegorzfranus/ansible--role--node--exporter-blue.svg?logo=github)](https://github.com/grzegorzfranus/ansible-role-node-exporter) | [![Release](https://img.shields.io/github/v/release/grzegorzfranus/ansible-role-node-exporter?color=blue&logo=github)](https://github.com/grzegorzfranus/ansible-role-node-exporter/releases) | [![CI](https://github.com/grzegorzfranus/ansible-role-node-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/grzegorzfranus/ansible-role-node-exporter/actions/workflows/ci.yml) | [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE) |
+| [![Source Code](https://img.shields.io/badge/source-github-blue.svg)](https://github.com/grzegorzfranus/ansible-role-node-exporter) | [![Version](https://img.shields.io/github/v/release/grzegorzfranus/ansible-role-node-exporter)](https://github.com/grzegorzfranus/ansible-role-node-exporter/releases) | [![CI](https://github.com/grzegorzfranus/ansible-role-node-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/grzegorzfranus/ansible-role-node-exporter/actions/workflows/ci.yml) | [![Repository License](https://img.shields.io/badge/license-apache2.0-brightgreen.svg)](LICENSE) |
 
 Enterprise-grade Ansible role that installs, configures, and manages Prometheus `node_exporter` as a native binary systemd service on Linux hosts (Ubuntu, Debian, RHEL/Rocky Linux).
 
@@ -10,13 +10,14 @@ Enterprise-grade Ansible role that installs, configures, and manages Prometheus 
 
 ## ✨ Features
 
-- **Native Binary Deployment**: Deploys static Go binary under systemd with full host `/proc` and `/sys` visibility.
-- **Versioned Directory Symlinking**: Installs into versioned `/opt/node_exporter/node_exporter-<version>.linux-<arch>/` with atomic `/usr/local/bin/node_exporter` symlink swaps for zero-downtime upgrades.
-- **Upstream SHA256 Verification**: Verifies release archives against official `sha256sums.txt` automatically, with support for explicit checksum pinning.
-- **Systemd Security Sandboxing**: Enforces `ProtectSystem=strict`, `ProtectHome=read-only`, `NoNewPrivileges=true`, empty `CapabilityBoundingSet`, and system call filtering.
-- **Dual-Layer Validation**: Declarative `meta/argument_specs.yml` paired with runtime `tasks/assert.yml` assertions.
-- **Textfile Collector Integration**: Automated directory creation and systemd `ReadWritePaths` configuration for custom metrics.
-- **Automated Version Cleanup**: Retains configurable number of past release directories (`node_exporter_retain_versions: 2`) for instant offline rollbacks.
+- 📦 **Native Binary Deployment**: Deploys static Go binary under systemd with full host `/proc` and `/sys` visibility.
+- 🔄 **Versioned Directory Symlinking**: Installs into versioned `/opt/node_exporter/node_exporter-<version>.linux-<arch>/` with atomic `/usr/local/bin/node_exporter` symlink swaps for zero-downtime upgrades.
+- 🔒 **Upstream SHA256 Verification**: Verifies release archives against official `sha256sums.txt` automatically, with support for explicit checksum pinning.
+- 🛡️ **Systemd Security Sandboxing**: Enforces `ProtectSystem=strict`, `ProtectHome=read-only`, `NoNewPrivileges=true`, `MemoryDenyWriteExecute=true`, empty `CapabilityBoundingSet`, and system call filtering.
+- 🧪 **Dual-Layer Validation**: Declarative `meta/argument_specs.yml` paired with runtime `tasks/assert.yml` assertions.
+- 📝 **Textfile Collector Integration**: Automated directory creation and systemd `ReadWritePaths` configuration for custom metrics.
+- 🧹 **Automated Version Cleanup**: Retains configurable number of past release directories (`node_exporter_retain_versions: 2`) for instant offline rollbacks.
+- 🧪 **Container Testing**: Full Molecule test suite covering multiple scenarios (`default`, `textfile`, `uninstall`) for CI/CD integration.
 
 ---
 
@@ -24,15 +25,35 @@ Enterprise-grade Ansible role that installs, configures, and manages Prometheus 
 
 Upstream Prometheus explicitly discourages running `node_exporter` inside containers because mounted container filesystems mask host `/proc`, `/sys`, and PID namespaces. This role deploys `node_exporter` as a single static Go binary managed directly by systemd. Host isolation and security boundaries are enforced using systemd service sandboxing directives instead of container namespaces.
 
+```
+Prometheus Server ← (Scrape /metrics HTTP GET) → node_exporter (Host Systemd Service)
+                                                      ├── Host /proc
+                                                      ├── Host /sys
+                                                      └── Textfile Metrics Directory
+```
+
 ---
 
 ## 📋 Requirements
 
+- **Ansible**: 2.15 or higher
+- **Python**: 3.9 or higher on target hosts
+- **Network**: Internet access to download official Prometheus release archives from GitHub Releases
+- **Privileges**: sudo/root access on target hosts
+
 ### Supported operating systems
 
-- **Ubuntu**: 22.04 LTS (Jammy), 24.04 LTS (Noble), 26.04 (Resolute)
-- **Debian**: 11 (Bullseye), 12 (Bookworm), 13 (Trixie)
-- **Enterprise Linux / RHEL / Rocky Linux**: 9.x
+List of officially supported operating systems for this role:
+
+| OS Family | Version | Status |
+|---|---|---|
+| Ubuntu | 26.04 (Resolute) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| Ubuntu | 24.04 (Noble) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| Ubuntu | 22.04 (Jammy) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| Debian | 13 (Trixie) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| Debian | 12 (Bookworm) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| Debian | 11 (Bullseye) | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
+| EL (RHEL, Rocky, Alma, Oracle) | 9 | ![✓](https://img.shields.io/badge/✓-brightgreen.svg) |
 
 ### Ansible version
 
@@ -44,11 +65,11 @@ Python 3.9+ on managed target nodes.
 
 ### Setup module
 
-Gathering facts (`gather_facts: true`) is required to populate `ansible_facts['architecture']`, `ansible_facts['os_family']`, and `ansible_facts['distribution']`.
+Gathering facts (`gather_facts: true`) is required to populate `ansible_facts['architecture']`, `ansible_facts['os_family']`, and `ansible_facts['distribution']`. If you disable the Setup module in your playbook, the role will not work properly.
 
 ### Root access
 
-Root or `become: true` privileges are required for system package installation, service user/group management, directory creation in `/opt`, and systemd unit placement.
+This role requires root access (`become: true`) for system package installation, service user/group management, directory creation under `/opt`, and systemd unit placement.
 
 ---
 
@@ -59,7 +80,9 @@ Root or `become: true` privileges are required for system package installation, 
 Add the role to your playbook requirements or role path and apply default configuration:
 
 ```yaml
-- hosts: all
+---
+- name: Deploy Node Exporter
+  hosts: all
   become: true
   roles:
     - role: grzegorzfranus.node_exporter
@@ -70,7 +93,9 @@ Add the role to your playbook requirements or role path and apply default config
 Configure custom enabled collectors and textfile directory for custom metrics:
 
 ```yaml
-- hosts: monitoring_targets
+---
+- name: Deploy Node Exporter with Textfile Collector
+  hosts: monitoring_targets
   become: true
   roles:
     - role: grzegorzfranus.node_exporter
@@ -95,13 +120,15 @@ ansible-playbook -i inventory/hosts site.yml --tags node_exporter
 
 ### Default Configuration
 
-Default configuration binds `node_exporter` to port 9100 on all network interfaces (`:9100`) exposing default collectors:
+The role comes with production-ready defaults:
 
 ```yaml
 node_exporter_version: "1.9.1"
 node_exporter_port: 9100
 node_exporter_listen_address: ""
 node_exporter_telemetry_path: "/metrics"
+node_exporter_service_enabled: true
+node_exporter_retain_versions: 2
 ```
 
 ### Advanced Configuration
@@ -109,11 +136,18 @@ node_exporter_telemetry_path: "/metrics"
 To restrict listening to a specific internal management interface (e.g., `192.0.2.10` per RFC 5737):
 
 ```yaml
-node_exporter_listen_address: "192.0.2.10"
-node_exporter_port: 9100
-node_exporter_disabled_collectors:
-  - "bcache"
-  - "infiniband"
+---
+- name: Advanced Node Exporter Setup
+  hosts: all
+  become: true
+  vars:
+    node_exporter_listen_address: "192.0.2.10"
+    node_exporter_port: 9100
+    node_exporter_disabled_collectors:
+      - "bcache"
+      - "infiniband"
+  roles:
+    - role: grzegorzfranus.node_exporter
 ```
 
 ---
@@ -182,33 +216,40 @@ node_exporter_disabled_collectors:
 
 | Variable | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `node_exporter_dashboard_urls` | `list[str]` | `[]` | List of Grafana dashboard download URLs. Recommended: Dashboard ID `1860` ("Node Exporter Full"). Pin a specific revision URL verified on grafana.com. |
+| `node_exporter_dashboard_urls` | `list[str]` | `[]` | List of Grafana dashboard download URLs. Recommended: Dashboard ID `1860` ("Node Exporter Full"). |
 
 ---
 
 ## 📌 Role Properties
 
-- **Idempotency**: All tasks use native stateful Ansible modules or idempotency guards (`stat`, `creates`).
-- **Sanitization**: Binary ownership is fixed to `root:root 0755` so the service user cannot modify its own executable.
-- **Service Ordering**: `After=network-online.target` prevents listener binding failures during boot.
+| Property | Value | Description |
+| :--- | :--- | :--- |
+| **Idempotent** | ✅ Yes | Running the role multiple times with the same parameters produces the exact same state. |
+| **Atomic** | ❌ No | The role can be partially applied. Binary extraction and systemd unit rendering occur sequentially. |
+| **Check Mode** | ✅ Supported | Dry-run mode is fully supported. Health checks and mutating commands are safely skipped. |
+| **Diff Mode** | ✅ Supported | Template rendering tasks support Ansible diff mode for visual change preview. |
 
 ---
 
 ## 📤 Role Output
 
+This role configures the following system components:
+
 - Systemd service unit `/etc/systemd/system/node_exporter.service`.
-- Binary release directory `/opt/node_exporter/node_exporter-<version>.linux-<arch>/`.
+- Versioned release directory `/opt/node_exporter/node_exporter-<version>.linux-<arch>/`.
 - Active binary symlink `/usr/local/bin/node_exporter`.
-- Running HTTP metric endpoint on port 9100.
+- Running HTTP metric endpoint on TCP port 9100 exposing host telemetry.
 
 ---
 
 ## 🔍 Verification
 
+After deployment, verify metrics collection is working:
+
 ### Check Service Status
 
 ```bash
-systemctl status node_exporter
+sudo systemctl status node_exporter.service
 ```
 
 ### Verify Metrics Endpoint
@@ -217,10 +258,10 @@ systemctl status node_exporter
 curl -s http://127.0.0.1:9100/metrics | grep node_cpu_seconds_total
 ```
 
-### Check Logs
+### Check Systemd Logs
 
 ```bash
-journalctl -u node_exporter -f
+sudo journalctl -u node_exporter.service -f
 ```
 
 ---
@@ -229,7 +270,7 @@ journalctl -u node_exporter -f
 
 ### Upgrade Steps
 
-1. Update `node_exporter_version` in your host or group variables (e.g. `node_exporter_version: "1.9.2"`).
+1. Update `node_exporter_version` in your inventory or group variables (e.g. `node_exporter_version: "1.9.2"`).
 2. Execute the playbook:
    ```bash
    ansible-playbook -i inventory/hosts site.yml --tags node_exporter
@@ -256,34 +297,41 @@ The task `cleanup.yml` automatically retains `node_exporter_retain_versions` (de
 If a new version exhibits issues, repoint the symlink and restart systemd manually:
 
 ```bash
-ln -sfn /opt/node_exporter/node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
-systemctl restart node_exporter
+sudo ln -sfn /opt/node_exporter/node_exporter-1.9.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
+sudo systemctl restart node_exporter
 ```
 
 ---
 
 ## 🛡️ Security Features
 
+- ✅ **Secure Default Configuration**: Minimal attack surface with unprivileged system user `node_exporter`
+- ✅ **Binary Sanitization**: Ownership fixed strictly to `root:root 0755` so service user cannot modify binary
+- ✅ **Service Sandboxing**: Enforces `ProtectSystem=strict`, `ProtectHome=read-only`, `PrivateTmp=true`, `PrivateDevices=true`, `NoNewPrivileges=true`, `MemoryDenyWriteExecute=true`, empty `CapabilityBoundingSet=`
+- ✅ **Checksum Verification**: Validates release archives against official `sha256sums.txt` before extraction
+
 ### Enhanced Security Configuration
 
-Systemd service unit contains enterprise sandboxing controls:
-- `ProtectSystem=strict`
-- `ProtectHome=read-only` (**Note**: `ProtectHome=read-only` is a deliberate design requirement. `ProtectHome=true` breaks host filesystem collector metrics).
-- `PrivateTmp=true`
-- `PrivateDevices=true`
-- `NoNewPrivileges=true`
-- `ProtectKernelTunables=true`
-- `ProtectKernelModules=true`
-- `ProtectControlGroups=true`
-- `CapabilityBoundingSet=` (empty)
+```yaml
+# Strict systemd sandboxing with dedicated textfile write directory
+node_exporter_textfile_directory: "/var/lib/node_exporter/textfile_collector"
+node_exporter_read_write_paths:
+  - "/var/lib/node_exporter/textfile_collector"
+```
 
 ### Uninstall
 
-Set `node_exporter_state: "absent"` and run the playbook to purge systemd units, symlinks, binary directories, user accounts, and groups:
+Set `node_exporter_state: "absent"` and run the playbook to purge systemd units, symlinks, binary directories, service user accounts, and groups:
 
 ```yaml
-vars:
-  node_exporter_state: "absent"
+---
+- name: Uninstall Node Exporter
+  hosts: all
+  become: true
+  roles:
+    - role: grzegorzfranus.node_exporter
+      vars:
+        node_exporter_state: "absent"
 ```
 
 ### Roll-back Capabilities
@@ -296,23 +344,25 @@ Because releases are stored in versioned subdirectories, rolling back requires n
 
 - Binary ownership is strictly `root:root` with permissions `0755`.
 - Service runs under dedicated system user `node_exporter` with `/sbin/nologin` shell and `create_home: false`.
+- `ProtectHome=read-only` is deliberately chosen over `ProtectHome=true` so host filesystem collectors can gather metrics without failing.
 
 ---
 
 ## 🧪 Check mode behavior
 
-Running Ansible with `--check` simulates task execution. Health check assertions (`test.yml`) are skipped in check mode.
+- Most validation and status checks run normally in Check Mode.
+- Mutating commands (such as package installation and service management) are safely skipped.
+- Health check assertions (`test.yml`) are skipped in check mode.
 
 ---
 
 ## 🏷️ Tags usage
 
-- `node_exporter_setup` - System user, group, and base directory setup.
-- `node_exporter_install` - Binary download, extraction, symlink, and version cleanup.
-- `node_exporter_configure` - Flag assembly and systemd unit rendering.
-- `node_exporter_service` - Systemd unit deployment and service management.
-- `node_exporter_remove` - Purge role resources (`state: absent`).
-- `node_exporter_test` - Metrics endpoint verification test.
+Use `--tags` to run selective parts of the role:
+
+```bash
+ansible-playbook -i inventory/hosts site.yml --tags node_exporter_install
+```
 
 ---
 
@@ -335,8 +385,8 @@ Archive downloads use `ansible.builtin.get_url` configured with `retries: 3`, `d
 
 Inspect systemd status and journal logs:
 ```bash
-systemctl status node_exporter.service
-journalctl -u node_exporter.service --no-pager -n 50
+sudo systemctl status node_exporter.service
+sudo journalctl -u node_exporter.service --no-pager -n 50
 ```
 
 ### Checksum Issues
@@ -356,76 +406,109 @@ If custom textfile collector metrics do not surface in `/metrics`:
 
 ```text
 ansible-role-node-exporter/
-├── .ansible-lint
-├── .gitignore
-├── .release-please-manifest.json
-├── .yamllint
-├── CHANGELOG.md
-├── LICENSE
-├── README.md
-├── release-please-config.json
+├── .ansible-lint                     # Ansible lint configuration
+├── .gitignore                        # Git ignore patterns
+├── .release-please-manifest.json     # Release Please manifest tracking
+├── .yamllint                         # YAML lint configuration
+├── CHANGELOG.md                      # Change history
+├── LICENSE                           # Apache-2.0 license file
+├── README.md                         # Role documentation
+├── release-please-config.json        # Release Please release configuration
 ├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   ├── PULL_REQUEST_TEMPLATE/
-│   ├── dependabot.yml
+│   ├── ISSUE_TEMPLATE/                # Issue templates for bug, feature, task
+│   │   ├── bug_report.yml
+│   │   ├── config.yml
+│   │   ├── feature_request.yml
+│   │   └── task.yml
+│   ├── PULL_REQUEST_TEMPLATE/         # Pull request description template
+│   │   └── pull_request_template.md
+│   ├── dependabot.yml                 # Dependabot configuration for GitHub Actions
 │   └── workflows/
-│       ├── ci.yml
-│       └── release.yml
+│       ├── ci.yml                     # CI pipeline workflow
+│       └── release.yml                # Release Please + Galaxy publish workflow
 ├── defaults/
-│   └── main.yml
+│   └── main.yml                       # Default configuration variables
 ├── handlers/
-│   └── main.yml
+│   └── main.yml                       # Service reload and restart handlers
 ├── meta/
-│   ├── argument_specs.yml
-│   └── main.yml
-├── molecule/
-│   ├── default/
-│   ├── textfile/
-│   └── uninstall/
+│   ├── argument_specs.yml             # Native argument specification schema
+│   └── main.yml                       # Role metadata and Galaxy information
+├── molecule/                          # Molecule testing scenarios
+│   ├── default/                       # Default scenario (installation & metrics test)
+│   ├── textfile/                      # Textfile collector scenario
+│   └── uninstall/                     # Uninstallation scenario
 ├── tasks/
-│   ├── assert.yml
-│   ├── cleanup.yml
-│   ├── configure.yml
-│   ├── install.yml
-│   ├── main.yml
-│   ├── prerequisites.yml
-│   ├── remove.yml
-│   ├── service.yml
-│   ├── test.yml
-│   └── user.yml
+│   ├── main.yml                       # Main task orchestrator
+│   ├── assert.yml                     # Variable assertion & validation tasks
+│   ├── cleanup.yml                    # Old version release cleanup tasks
+│   ├── configure.yml                  # Flag assembly & systemd hardening tasks
+│   ├── install.yml                    # Binary download, extraction & symlinking
+│   ├── prerequisites.yml              # Package prerequisites & directory setup
+│   ├── remove.yml                     # Role teardown & asset removal tasks
+│   ├── service.yml                    # Systemd unit rendering & service state
+│   ├── test.yml                       # Metric endpoint health check tasks
+│   └── user.yml                       # System user and group setup
 ├── templates/
 │   └── systemd/
-│       └── node_exporter.service.j2
+│       └── node_exporter.service.j2   # Systemd service unit Jinja2 template
 └── vars/
-    ├── debian.yml
-    ├── main.yml
-    └── redhat.yml
+    ├── debian.yml                     # Debian family package variables
+    ├── default.yml                    # Default fallback package variables
+    ├── main.yml                       # Architecture mapping & internal facts
+    └── redhat.yml                     # RedHat family package variables
 ```
 
 ---
 
 ## 🏷️ Tags
 
-Summary of all available Ansible tags: `node_exporter_setup`, `node_exporter_install`, `node_exporter_configure`, `node_exporter_service`, `node_exporter_remove`, `node_exporter_test`.
+Summary of all available Ansible tags:
+
+| Tag | Description |
+|---|---|
+| `node_exporter_setup` | Setup tasks including OS-specific variables, user, group, and directory creation |
+| `node_exporter_install` | Binary download, extraction, symlinking, and version cleanup |
+| `node_exporter_configure` | Command flag assembly and systemd unit rendering |
+| `node_exporter_service` | Systemd service unit deployment and management |
+| `node_exporter_remove` | Purge all role resources (`state: absent`) |
+| `node_exporter_test` | Metric endpoint verification health check |
 
 ---
 
 ## CI/CD Pipeline
 
+This repository uses centralized, reusable GitHub Actions workflows from [grzegorzfranus/github-workflows](https://github.com/grzegorzfranus/github-workflows) (`v3.0.1`) for quality assurance, security scanning, and release automation.
+
 ### CI Pipeline (`ansible-ci.yml@v3.0.1`)
 
-Runs on pull requests to validate branch name (`branch-name-lint`), PR title (`pr-title-lint`), `yamllint`, `ansible-lint`, `actionlint`, and Molecule matrix testing across 7 OS distributions.
+Runs on every Pull Request in a two-tier gate pattern:
+
+1. **Branch Name Lint** — enforces naming conventions (`feature/`, `bugfix/`, `fix/`, `hotfix/`, `release/`, `chore/`, `docs/`, `refactor/`, `test/`, `build/`, `ci/`, `perf/`, `revert/`)
+2. **PR Title Lint** — enforces [Conventional Commits](https://www.conventionalcommits.org/) format (`feat:`, `fix:`, `ci:`, etc.)
+3. **YAML Syntax Lint** — validates YAML formatting via `yamllint`
+4. **Ansible Lint** — checks Ansible best practices and role standards
+5. **Galaxy Metadata Validation** — verifies `meta/main.yml` schema and requirements (`ansible-meta-validate.yml`)
+6. **Security Scanning** — TruffleHog secret detection and Trivy IaC scanning (`ansible-security.yml`)
+7. **Molecule Integration Tests** — executes Molecule test matrix across Ubuntu 26.04, Ubuntu 24.04, Ubuntu 22.04, Debian 13, Debian 12, Debian 11, and Rocky Linux 9 (`ansible-molecule.yml`)
+8. **Merge Check Gate** — single authoritative status check aggregating all results for branch protection
 
 ### Release & Publish Pipeline (`ansible-publish.yml@v3.0.1`)
 
-Automates version bumping, changelog generation, GitHub release creation via release-please, and publication to Ansible Galaxy upon merging to `main`.
+Automated via [Release Please](https://github.com/googleapis/release-please):
+
+1. **Push to `main`** → Release Please creates or updates a Release PR with automated changelog generation
+2. **Release PR Validation** → validates YAML syntax and actions schema before setting `Merge Check` status
+3. **Merge Release PR** → creates Git version tag and GitHub Release automatically
+4. **Ansible Galaxy Publish** → publishes tagged release to Ansible Galaxy via `ansible-publish.yml@v3.0.1` with exponential backoff retry logic
 
 ---
 
 ## Example Playbooks
 
 ```yaml
-- hosts: all
+---
+- name: Deploy Prometheus Node Exporter
+  hosts: all
   become: true
   roles:
     - role: grzegorzfranus.node_exporter
@@ -435,16 +518,21 @@ Automates version bumping, changelog generation, GitHub release creation via rel
         node_exporter_enabled_collectors:
           - "systemd"
           - "processes"
+        node_exporter_service_enabled: true
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome!
+Contributions, bug reports, and feature requests are welcome!
 
+- Fork the repository and create your branch from `main`
 - Branch naming must match: `^(feature|bugfix|fix|hotfix|release|chore|docs|refactor|test|build|ci|perf|revert)/[a-zA-Z0-9-]+$`
-- PR titles must follow Conventional Commits: `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_-]+\))?!?: .+$`
+- PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/): `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9_-]+\))?!?: .+$`
+- Centralized workflows from [github-workflows](https://github.com/grzegorzfranus/github-workflows) version `v3.0.1` are used to run CI/CD pipelines
+- Ensure your code passes all CI checks (`yamllint`, `ansible-lint`, Molecule tests)
+- Submit a pull request describing your changes (a template is available under `.github/PULL_REQUEST_TEMPLATE/pull_request_template.md`)
 
 ---
 
@@ -456,4 +544,4 @@ This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENS
 
 ## 👥 Author Information
 
-Created and maintained by Grzegorz Franus.
+This role was created and is maintained by [Grzegorz Franus](https://github.com/grzegorzfranus).
