@@ -1,0 +1,156 @@
+---
+# ==============================================================================
+# Ansible Role Defaults: grzegorzfranus.node_exporter
+# ==============================================================================
+# Target OS: Ubuntu 22.04+, Debian 11+, RHEL/Rocky Linux 9+
+# Description: Prometheus Node Exporter daemon configuration defaults.
+# Variable Prefix: node_exporter_
+# ==============================================================================
+# Index:
+# 1. General Settings
+# 2. Installation
+# 3. Service Account
+# 4. Network
+# 5. Collectors
+# 6. Systemd Hardening & Ordering
+# 7. Grafana Integration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. General Settings
+# ------------------------------------------------------------------------------
+# Execution action phase for the role.
+# Valid values: "all", "prerequisites", "install", "configure", "service", "remove", "test"
+node_exporter_role_action: "all"
+
+# Desired state of the node_exporter service and assets on the host.
+# Valid values: "present", "absent"
+node_exporter_state: "present"
+
+# Whether the node_exporter systemd service should be enabled and running.
+# Valid values: true, false
+node_exporter_service_enabled: true
+
+# Whether to execute the metrics endpoint health check test task post-installation.
+# Valid values: true, false
+node_exporter_run_test: false
+
+# ------------------------------------------------------------------------------
+# 2. Installation
+# ------------------------------------------------------------------------------
+# Version of Prometheus node_exporter binary to download and manage.
+# Valid values: Semantic version string (e.g. "1.9.1")
+node_exporter_version: "1.9.1"
+
+# Base directory where versioned releases of node_exporter are installed.
+# Valid values: Absolute directory path
+node_exporter_base_dir: "/opt/node_exporter"
+
+# Path to the symlink pointing to the currently active node_exporter binary.
+# Valid values: Absolute file path
+node_exporter_bin_link: "/usr/local/bin/node_exporter"
+
+# Number of previous node_exporter release directories to retain in base_dir.
+# Valid values: Positive integer >= 1
+node_exporter_retain_versions: 2
+
+# Temporary directory used for downloading node_exporter archive and checksums.
+# Valid values: Absolute directory path
+node_exporter_download_dir: "/tmp"
+
+# Optional explicit download URL for node_exporter release archive.
+# Valid values: URL string or empty string "" (derived automatically from version/arch when empty)
+node_exporter_download_url: ""
+
+# Optional explicit SHA256 checksum string for the node_exporter archive.
+# Valid values: 64-character SHA256 hex string or empty string ""
+node_exporter_checksum: ""
+
+# Whether to verify the downloaded archive against upstream sha256sums.txt or checksum.
+# Valid values: true, false
+node_exporter_verify_checksum: true
+
+# Timeout in seconds for HTTP download requests.
+# Valid values: Positive integer in seconds
+node_exporter_download_timeout: 60
+
+# ------------------------------------------------------------------------------
+# 3. Service Account
+# ------------------------------------------------------------------------------
+# Unprivileged system account user name under which node_exporter runs.
+# Valid values: Valid Linux user name string
+node_exporter_user: "node_exporter"
+
+# Unprivileged system account group name under which node_exporter runs.
+# Valid values: Valid Linux group name string
+node_exporter_group: "node_exporter"
+
+# ------------------------------------------------------------------------------
+# 4. Network
+# ------------------------------------------------------------------------------
+# Network IP address on which node_exporter listens for HTTP requests.
+# Valid values: IP address string or "" (empty string binds to all interfaces)
+node_exporter_listen_address: ""
+
+# TCP port number on which node_exporter listens for HTTP scraping.
+# Valid values: TCP port number (1-65535, default 9100)
+node_exporter_port: 9100
+
+# HTTP endpoint path on which metrics are exposed.
+# Valid values: HTTP path string starting with "/"
+node_exporter_telemetry_path: "/metrics"
+
+# ------------------------------------------------------------------------------
+# 5. Collectors
+# ------------------------------------------------------------------------------
+# List of node_exporter collectors to explicitly enable (--collector.<name>).
+# Valid values: List of collector name strings
+node_exporter_enabled_collectors: []
+
+# List of node_exporter collectors to explicitly disable (--no-collector.<name>).
+# Valid values: List of collector name strings
+node_exporter_disabled_collectors: []
+
+# Absolute directory path for the textfile collector (--collector.textfile.directory).
+# Valid values: Absolute directory path or "" (empty string disables textfile collector)
+node_exporter_textfile_directory: ""
+
+# List of additional command-line arguments to pass to node_exporter executable.
+# Valid values: List of argument strings
+node_exporter_extra_args: []
+
+# ------------------------------------------------------------------------------
+# 6. Systemd Hardening & Ordering
+# ------------------------------------------------------------------------------
+# Systemd target or unit names to list in After= ordering directive.
+# Valid values: List of systemd unit name strings
+node_exporter_after_units:
+  - "network-online.target"
+
+# Systemd target or unit names to list in Wants= dependency directive.
+# Valid values: List of systemd unit name strings
+node_exporter_wants_units:
+  - "network-online.target"
+
+# Systemd unit restart policy.
+# Valid values: "always", "on-failure", "on-abnormal", "no"
+node_exporter_restart_policy: "on-failure"
+
+# Delay in seconds before systemd restarts the service upon failure.
+# Valid values: Positive integer in seconds
+node_exporter_restart_sec: 5
+
+# Maximum file descriptor limit (LimitNOFILE) for the systemd unit.
+# Valid values: Positive integer
+node_exporter_limit_nofile: 65536
+
+# List of filesystem paths where write access is allowed (ProtectSystem=strict exceptions).
+# Valid values: List of absolute path strings
+node_exporter_read_write_paths: []
+
+# ------------------------------------------------------------------------------
+# 7. Grafana Integration
+# ------------------------------------------------------------------------------
+# List of Grafana dashboard JSON download URLs for provisioning integrations.
+# Valid values: List of HTTPS URL strings (Recommended: ID 1860 with pinned revision)
+node_exporter_dashboard_urls: []

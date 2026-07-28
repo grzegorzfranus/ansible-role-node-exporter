@@ -1,0 +1,45 @@
+---
+name: Feature request
+description: Suggest an idea or new feature
+title: "feat: [Brief Description of Feature]"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 💡 Feature Request
+        Thank you for suggesting a feature! Please fill out the form sections below.
+  - type: textarea
+    id: what
+    attributes:
+      label: "1. What"
+      description: Describe the feature you would like added.
+      placeholder: "Describe the feature..."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: "2. Why"
+      description: Motivation and use case for this feature.
+      placeholder: "Motivation and context..."
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: "3. Value"
+      description: Technical or operational value of this feature.
+      placeholder: "Value of this feature..."
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: "4. Acceptance Criteria"
+      description: Criteria that must be met to consider this issue complete.
+      value: |
+        - [ ] Feature is implemented.
+        - [ ] Automated tests pass.
+    validations:
+      required: true

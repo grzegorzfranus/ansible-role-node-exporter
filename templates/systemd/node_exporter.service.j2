@@ -1,0 +1,39 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+{{ ansible_managed | comment }}
+[Unit]
+Description=Prometheus Node Exporter
+Documentation=https://github.com/prometheus/node_exporter
+{% if node_exporter_after_units %}
+After={{ node_exporter_after_units | join(' ') }}
+{% endif %}
+{% if node_exporter_wants_units %}
+Wants={{ node_exporter_wants_units | join(' ') }}
+{% endif %}
+
+[Service]
+Type=exec
+User={{ node_exporter_user }}
+Group={{ node_exporter_group }}
+ExecStart={{ node_exporter_bin_link }} {{ __node_exporter_args }}
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+LimitNOFILE={{ node_exporter_limit_nofile }}
+Restart={{ node_exporter_restart_policy }}
+RestartSec={{ node_exporter_restart_sec }}
+{% if __node_exporter_read_write_paths | length > 0 %}
+ReadWritePaths={{ __node_exporter_read_write_paths | join(' ') }}
+{% endif %}
+
+[Install]
+WantedBy=multi-user.target

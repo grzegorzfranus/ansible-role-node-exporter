@@ -1,0 +1,68 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: "Verify | Check systemd unit file is removed"
+      ansible.builtin.stat:
+        path: "/etc/systemd/system/node_exporter.service"
+      register: __verify_unit
+
+    - name: "Verify | Assert unit file absent"
+      ansible.builtin.assert:
+        that:
+          - not __verify_unit.stat.exists
+        fail_msg: "Systemd unit file /etc/systemd/system/node_exporter.service still exists."
+        success_msg: "Systemd unit file successfully removed."
+
+    - name: "Verify | Check binary symlink is removed"
+      ansible.builtin.stat:
+        path: "/usr/local/bin/node_exporter"
+      register: __verify_symlink
+
+    - name: "Verify | Assert binary symlink absent"
+      ansible.builtin.assert:
+        that:
+          - not __verify_symlink.stat.exists
+        fail_msg: "Binary symlink /usr/local/bin/node_exporter still exists."
+        success_msg: "Binary symlink successfully removed."
+
+    - name: "Verify | Check base installation directory is removed"
+      ansible.builtin.stat:
+        path: "/opt/node_exporter"
+      register: __verify_basedir
+
+    - name: "Verify | Assert base directory absent"
+      ansible.builtin.assert:
+        that:
+          - not __verify_basedir.stat.exists
+        fail_msg: "Base installation directory /opt/node_exporter still exists."
+        success_msg: "Base directory successfully removed."
+
+    - name: "Verify | Check user node_exporter is removed"
+      ansible.builtin.getent:
+        database: passwd
+        key: node_exporter
+      register: __verify_user
+      failed_when: false
+
+    - name: "Verify | Assert user absent"
+      ansible.builtin.assert:
+        that:
+          - __verify_user.ansible_facts.getent_passwd is not defined or 'node_exporter' not in __verify_user.ansible_facts.getent_passwd
+        fail_msg: "System user node_exporter still exists."
+        success_msg: "System user successfully removed."
+
+    - name: "Verify | Check group node_exporter is removed"
+      ansible.builtin.getent:
+        database: group
+        key: node_exporter
+      register: __verify_group
+      failed_when: false
+
+    - name: "Verify | Assert group absent"
+      ansible.builtin.assert:
+        that:
+          - __verify_group.ansible_facts.getent_group is not defined or 'node_exporter' not in __verify_group.ansible_facts.getent_group
+        fail_msg: "System group node_exporter still exists."
+        success_msg: "System group successfully removed."

@@ -1,0 +1,35 @@
+---
+# ==============================================================================
+# Ansible Role Metadata: grzegorzfranus.node_exporter
+# ==============================================================================
+galaxy_info:
+  role_name: node_exporter
+  author: "Grzegorz Franus"
+  description: "Prometheus Node Exporter role deploying native binary under systemd with versioned releases, upstream SHA256 checksum validation, and systemd sandboxing."
+  license: "Apache-2.0"
+  min_ansible_version: "2.15"
+  namespace: grzegorzfranus
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+        - resolute
+        - jammy
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+        - bullseye
+    - name: EL
+      versions:
+        - "9"
+
+  galaxy_tags:
+    - monitoring
+    - prometheus
+    - metrics
+    - nodeexporter
+    - observability
+
+dependencies: []

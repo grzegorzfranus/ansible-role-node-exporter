@@ -1,0 +1,182 @@
+---
+# ==============================================================================
+# Ansible Role Argument Specifications: grzegorzfranus.node_exporter
+# ==============================================================================
+argument_specs:
+  main:
+    short_description: "Manage Prometheus node_exporter daemon on Linux systems."
+    description:
+      - "Installs, configures, and manages Prometheus node_exporter as a native binary systemd service."
+      - "Supports versioned releases, upstream SHA256 checksum verification, and systemd sandboxing."
+    author:
+      - "Grzegorz Franus"
+    options:
+      node_exporter_role_action:
+        type: "str"
+        default: "all"
+        choices:
+          - "all"
+          - "prerequisites"
+          - "install"
+          - "configure"
+          - "service"
+          - "remove"
+          - "test"
+        description: "Action phase to execute."
+
+      node_exporter_state:
+        type: "str"
+        default: "present"
+        choices:
+          - "present"
+          - "absent"
+        description: "Desired state of node_exporter on the host."
+
+      node_exporter_service_enabled:
+        type: "bool"
+        default: true
+        description: "Whether the node_exporter service should be enabled and running."
+
+      node_exporter_run_test:
+        type: "bool"
+        default: false
+        description: "Whether to execute the post-installation metrics endpoint test."
+
+      node_exporter_version:
+        type: "str"
+        default: "1.9.1"
+        description: "Version of node_exporter to install."
+
+      node_exporter_base_dir:
+        type: "path"
+        default: "/opt/node_exporter"
+        description: "Directory where versioned release subdirectories are installed."
+
+      node_exporter_bin_link:
+        type: "path"
+        default: "/usr/local/bin/node_exporter"
+        description: "Symlink path pointing to the active node_exporter binary."
+
+      node_exporter_retain_versions:
+        type: "int"
+        default: 2
+        description: "Number of release versions to retain in base_dir for instant rollback."
+
+      node_exporter_download_dir:
+        type: "path"
+        default: "/tmp"
+        description: "Directory used for temporary download storage."
+
+      node_exporter_download_url:
+        type: "str"
+        default: ""
+        description: "Custom archive download URL (derived automatically when empty)."
+
+      node_exporter_checksum:
+        type: "str"
+        default: ""
+        description: "Custom SHA256 checksum string for archive (verified against sha256sums.txt when empty)."
+
+      node_exporter_verify_checksum:
+        type: "bool"
+        default: true
+        description: "Whether to perform SHA256 checksum verification."
+
+      node_exporter_download_timeout:
+        type: "int"
+        default: 60
+        description: "Timeout in seconds for archive HTTP downloads."
+
+      node_exporter_user:
+        type: "str"
+        default: "node_exporter"
+        description: "System user name under which node_exporter runs."
+
+      node_exporter_group:
+        type: "str"
+        default: "node_exporter"
+        description: "System group name under which node_exporter runs."
+
+      node_exporter_listen_address:
+        type: "str"
+        default: ""
+        description: "IP address to bind listener (empty string binds to all interfaces)."
+
+      node_exporter_port:
+        type: "int"
+        default: 9100
+        description: "TCP port number to bind listener."
+
+      node_exporter_telemetry_path:
+        type: "str"
+        default: "/metrics"
+        description: "HTTP URL path endpoint for metrics exposition."
+
+      node_exporter_enabled_collectors:
+        type: "list"
+        elements: "str"
+        default: []
+        description: "Collectors to explicitly enable (--collector.<name>)."
+
+      node_exporter_disabled_collectors:
+        type: "list"
+        elements: "str"
+        default: []
+        description: "Collectors to explicitly disable (--no-collector.<name>)."
+
+      node_exporter_textfile_directory:
+        type: "str"
+        default: ""
+        description: "Directory path for textfile collector metrics (disabled when empty)."
+
+      node_exporter_extra_args:
+        type: "list"
+        elements: "str"
+        default: []
+        description: "Extra command-line flags to pass to node_exporter binary."
+
+      node_exporter_after_units:
+        type: "list"
+        elements: "str"
+        default:
+          - "network-online.target"
+        description: "Systemd unit dependencies for After= directive."
+
+      node_exporter_wants_units:
+        type: "list"
+        elements: "str"
+        default:
+          - "network-online.target"
+        description: "Systemd unit dependencies for Wants= directive."
+
+      node_exporter_restart_policy:
+        type: "str"
+        default: "on-failure"
+        choices:
+          - "always"
+          - "on-failure"
+          - "on-abnormal"
+          - "no"
+        description: "Systemd service restart policy."
+
+      node_exporter_restart_sec:
+        type: "int"
+        default: 5
+        description: "Delay in seconds before systemd restarts service."
+
+      node_exporter_limit_nofile:
+        type: "int"
+        default: 65536
+        description: "Systemd limit for open file descriptors (LimitNOFILE)."
+
+      node_exporter_read_write_paths:
+        type: "list"
+        elements: "str"
+        default: []
+        description: "Filesystem paths granted write access under ProtectSystem=strict."
+
+      node_exporter_dashboard_urls:
+        type: "list"
+        elements: "str"
+        default: []
+        description: "Grafana dashboard JSON download URLs for provisioning integrations."

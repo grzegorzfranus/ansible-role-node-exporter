@@ -1,0 +1,73 @@
+---
+- name: molecule | Converge
+  hosts: all
+
+  pre_tasks:
+    - name: Converge | Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      changed_when: false
+      when: >
+        ansible_facts['os_family'] == "Debian"
+
+    - name: Converge | Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: true
+      changed_when: false
+      when: >
+        ansible_facts['os_family'] == "RedHat"
+
+    - name: Converge | Wait for systemd to complete initialization
+      ansible.builtin.command: systemctl is-system-running
+      register: __converge_systemctl_status
+      until: >
+        'running' in __converge_systemctl_status.stdout or
+        'degraded' in __converge_systemctl_status.stdout
+      retries: 30
+      delay: 5
+      when: >
+        ansible_facts['service_mgr'] == 'systemd'
+      changed_when: false
+      failed_when: __converge_systemctl_status.rc > 1
+
+  tasks:
+    - name: Converge | Execute node_exporter role with textfile collector
+      block:
+        - name: Converge | Include node_exporter role
+          ansible.builtin.include_role:
+            name: "{{ playbook_dir }}/../.."
+          vars:
+            node_exporter_textfile_directory: "/var/lib/node_exporter/textfile_collector"
+            node_exporter_read_write_paths:
+              - "/var/lib/node_exporter/textfile_collector"
+            node_exporter_run_test: true
+
+        - name: Converge | Flush handlers
+          ansible.builtin.meta: flush_handlers
+      rescue:
+        - name: Converge | Debug | Capture systemctl status
+          ansible.builtin.command:
+            cmd: "systemctl status node_exporter.service"
+          register: __converge_debug_status
+          changed_when: false
+          failed_when: false
+
+        - name: Converge | Debug | Show service status
+          ansible.builtin.debug:
+            var: __converge_debug_status.stdout_lines
+
+        - name: Converge | Debug | Capture journal logs
+          ansible.builtin.command:
+            cmd: "journalctl -xeu node_exporter.service --no-pager -n 50"
+          register: __converge_debug_journal
+          changed_when: false
+          failed_when: false
+
+        - name: Converge | Debug | Show journal logs
+          ansible.builtin.debug:
+            var: __converge_debug_journal.stdout_lines
+
+        - name: Converge | Fail after diagnostics
+          ansible.builtin.fail:
+            msg: "Node-exporter role failed during converge. See diagnostic output above."

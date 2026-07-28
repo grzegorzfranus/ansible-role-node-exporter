@@ -1,0 +1,50 @@
+---
+# ==============================================================================
+# Ansible Role Teardown: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | remove | Stop and disable systemd service"
+  ansible.builtin.systemd_service:
+    name: "{{ __node_exporter_service_name }}"
+    state: stopped
+    enabled: false
+  failed_when: false
+
+- name: "Node-Exporter | remove | Remove systemd service unit file"
+  ansible.builtin.file:
+    path: "/etc/systemd/system/node_exporter.service"
+    state: absent
+  notify:
+    - "Node-Exporter | handlers | Reload systemd daemon"
+
+- name: "Node-Exporter | remove | Flush handlers to apply unit removal"
+  ansible.builtin.meta: flush_handlers
+
+- name: "Node-Exporter | remove | Remove binary symlink"
+  ansible.builtin.file:
+    path: "{{ node_exporter_bin_link }}"
+    state: absent
+
+- name: "Node-Exporter | remove | Remove installation base directory"
+  ansible.builtin.file:
+    path: "{{ node_exporter_base_dir }}"
+    state: absent
+
+- name: "Node-Exporter | remove | Remove textfile collector directory"
+  ansible.builtin.file:
+    path: "{{ node_exporter_textfile_directory }}"
+    state: absent
+  when:
+    - node_exporter_textfile_directory is defined
+    - node_exporter_textfile_directory != ""
+
+- name: "Node-Exporter | remove | Remove system user"
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    state: absent
+    remove: false
+
+- name: "Node-Exporter | remove | Remove system group"
+  ansible.builtin.group:
+    name: "{{ node_exporter_group }}"
+    state: absent

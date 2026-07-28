@@ -1,0 +1,16 @@
+---
+# ==============================================================================
+# Ansible Role Handlers: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | handlers | Reload systemd daemon"
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: "Node-Exporter | handlers | Restart service"
+  ansible.builtin.systemd_service:
+    name: "{{ __node_exporter_service_name }}"
+    state: restarted
+  when:
+    - node_exporter_service_enabled | bool
+    - node_exporter_state == "present"

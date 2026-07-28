@@ -1,0 +1,134 @@
+---
+name: "Release"
+run-name: "Release: ${{ github.ref_name }} by @${{ github.actor }}"
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ================================================================
+  # 1. RELEASE PLEASE
+  # ----------------------------------------------------------------
+  # Analyzes Conventional Commits since last release and creates
+  # or updates a Release PR. When the Release PR is merged, it
+  # creates a Git tag and GitHub Release automatically.
+  # ================================================================
+  release-please:
+    name: "📝 Run Release Please"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      release_created: ${{ steps.release.outputs.release_created }}
+    steps:
+      - name: "📝 Run Release Please"
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # ================================================================
+  # 2. VALIDATE RELEASE PR
+  # ----------------------------------------------------------------
+  # Runs CI checks on the Release PR branch and sets the required
+  # "Merge Check" commit status via the GitHub API. This is needed
+  # because PRs created by GITHUB_TOKEN do not trigger pull_request
+  # events in other workflows.
+  # ================================================================
+  validate-release-pr:
+    name: "🔍 Validate Release PR"
+    needs: [release-please]
+    if: needs.release-please.outputs.prs_created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: read
+    steps:
+      - name: "🔍 Retrieve Release PR Details"
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO="${{ github.repository }}"
+          PR_NUMBER=$(gh pr list \
+            --repo "$REPO" \
+            --head "release-please--branches--main" \
+            --json number \
+            --jq '.[0].number')
+          PR_SHA=$(gh pr view "$PR_NUMBER" \
+            --repo "$REPO" \
+            --json headRefOid \
+            --jq '.headRefOid')
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "sha=$PR_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: "🔍 Checkout Release PR Branch"
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: release-please--branches--main
+          persist-credentials: false
+
+      - name: "🔍 Validate YAML Syntax"
+        run: pipx run yamllint .
+
+      - name: "🔍 Validate GitHub Actions"
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+
+      - name: "🔍 Validate Galaxy Metadata"
+        run: |
+          if [ ! -f meta/main.yml ]; then
+            echo "::error::meta/main.yml is missing"
+            exit 1
+          fi
+          python3 -c "
+          import yaml, sys
+          with open('meta/main.yml') as f:
+              data = yaml.safe_load(f)
+          gi = data.get('galaxy_info', {})
+          errors = []
+          for field in ['author', 'description', 'license', 'min_ansible_version']:
+              if not gi.get(field):
+                  errors.append(f'Missing required field: galaxy_info.{field}')
+          desc = gi.get('description', '')
+          if desc and len(desc) > 255:
+              errors.append(f'Description too long: {len(desc)}/255 chars')
+          if not gi.get('platforms'):
+              errors.append('No platforms defined in galaxy_info')
+          if errors:
+              for e in errors:
+                  print(f'::error::{e}')
+              sys.exit(1)
+          print('Galaxy metadata validation passed')
+          "
+
+      - name: "✅ Publish Merge Check Status"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_SHA: ${{ steps.pr.outputs.sha }}
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/$PR_SHA" \
+            -f state=success \
+            -f context="Merge Check Gate" \
+            -f description="All validations passed (Release PR)"
+          echo "Set 'Merge Check' status on commit $PR_SHA"
+
+  # ================================================================
+  # 3. PUBLISH TO ANSIBLE GALAXY
+  # ================================================================
+  publish-to-galaxy:
+    name: "Publish to Galaxy"
+    needs: [release-please]
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: grzegorzfranus/github-workflows/.github/workflows/ansible-publish.yml@v3.0.1
+    secrets:
+      galaxy-api-key: ${{ secrets.GALAXY_API_KEY }}

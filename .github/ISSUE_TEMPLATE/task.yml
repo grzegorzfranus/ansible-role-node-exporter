@@ -1,0 +1,45 @@
+---
+name: Task
+description: File a maintenance task or chore
+title: "chore: [Brief Description of Task]"
+labels: ["chore"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 📋 Task / Chore
+        Please fill out the form sections below.
+  - type: textarea
+    id: what
+    attributes:
+      label: "1. What"
+      description: Describe the task or maintenance work.
+      placeholder: "Describe the task..."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: "2. Why"
+      description: Motivation and context.
+      placeholder: "Motivation and context..."
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: "3. Value"
+      description: Technical value of performing this task.
+      placeholder: "Technical value..."
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: "4. Acceptance Criteria"
+      description: Criteria that must be met to consider this issue complete.
+      value: |
+        - [ ] Task is complete.
+        - [ ] CI checks pass.
+    validations:
+      required: true

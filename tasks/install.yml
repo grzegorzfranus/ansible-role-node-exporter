@@ -1,0 +1,122 @@
+---
+# ==============================================================================
+# Ansible Role Binary Installation: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | install | Set release directory and asset facts"
+  ansible.builtin.set_fact:
+    __node_exporter_release_dir: "{{ node_exporter_base_dir }}/node_exporter-{{ node_exporter_version }}.linux-{{ __node_exporter_arch }}"
+    __node_exporter_tarball: "node_exporter-{{ node_exporter_version }}.linux-{{ __node_exporter_arch }}.tar.gz"
+
+- name: "Node-Exporter | install | Check if target version binary exists"
+  ansible.builtin.stat:
+    path: "{{ __node_exporter_release_dir }}/node_exporter"
+  register: __node_exporter_binary_stat
+
+- name: "Node-Exporter | install | Download and extract release archive"
+  block:
+    - name: "Node-Exporter | install | Derive download URL"
+      ansible.builtin.set_fact:
+        __node_exporter_url: >-
+          {{
+            node_exporter_download_url if (node_exporter_download_url is defined and node_exporter_download_url != "")
+            else "https://github.com/" ~ __node_exporter_repo ~ "/releases/download/v" ~ node_exporter_version ~ "/" ~ __node_exporter_tarball
+          }}
+        __node_exporter_sha256_url: "https://github.com/{{ __node_exporter_repo }}/releases/download/v{{ node_exporter_version }}/sha256sums.txt"
+
+    - name: "Node-Exporter | install | Fetch upstream checksums file"
+      ansible.builtin.get_url:
+        url: "{{ __node_exporter_sha256_url }}"
+        dest: "{{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
+        mode: "0644"
+        timeout: "{{ node_exporter_download_timeout }}"
+      register: __node_exporter_sha_download
+      until: __node_exporter_sha_download is succeeded
+      retries: 3
+      delay: 5
+      when:
+        - node_exporter_verify_checksum | bool
+        - node_exporter_checksum == ""
+        - not __node_exporter_binary_stat.stat.exists
+
+    - name: "Node-Exporter | install | Extract SHA256 checksum for target archive"
+      ansible.builtin.command:
+        cmd: "grep '{{ __node_exporter_tarball }}' {{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
+      register: __node_exporter_grep_checksum
+      changed_when: false
+      when:
+        - node_exporter_verify_checksum | bool
+        - node_exporter_checksum == ""
+        - not __node_exporter_binary_stat.stat.exists
+
+    - name: "Node-Exporter | install | Set computed checksum fact"
+      ansible.builtin.set_fact:
+        __node_exporter_effective_checksum: >-
+          {% if node_exporter_checksum is defined and node_exporter_checksum != "" %}
+          sha256:{{ node_exporter_checksum }}
+          {% elif node_exporter_verify_checksum | bool and
+                  __node_exporter_grep_checksum is defined and
+                  __node_exporter_grep_checksum.stdout is defined and
+                  __node_exporter_grep_checksum.stdout != "" %}
+          sha256:{{ __node_exporter_grep_checksum.stdout.split()[0] }}
+          {% else %}
+          {{ omit }}
+          {% endif %}
+
+    - name: "Node-Exporter | install | Download release archive"
+      ansible.builtin.get_url:
+        url: "{{ __node_exporter_url }}"
+        dest: "{{ node_exporter_download_dir }}/{{ __node_exporter_tarball }}"
+        checksum: "{{ __node_exporter_effective_checksum }}"
+        mode: "0644"
+        timeout: "{{ node_exporter_download_timeout }}"
+      register: __node_exporter_tarball_download
+      until: __node_exporter_tarball_download is succeeded
+      retries: 3
+      delay: 5
+      when: not __node_exporter_binary_stat.stat.exists
+
+    - name: "Node-Exporter | install | Extract release archive into base directory"
+      ansible.builtin.unarchive:
+        src: "{{ node_exporter_download_dir }}/{{ __node_exporter_tarball }}"
+        dest: "{{ node_exporter_base_dir }}"
+        remote_src: true
+        creates: "{{ __node_exporter_release_dir }}/node_exporter"
+        owner: "root"
+        group: "root"
+        mode: "0755"
+      when: not __node_exporter_binary_stat.stat.exists
+
+  rescue:
+    - name: "Node-Exporter | install | Report download or extraction failure"
+      ansible.builtin.fail:
+        msg: >-
+          Failed to download or verify node_exporter release archive v{{ node_exporter_version }}
+          from {{ __node_exporter_url }}. Please verify internet access and checksums.
+
+  always:
+    - name: "Node-Exporter | install | Clean up temporary archive files"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ node_exporter_download_dir }}/{{ __node_exporter_tarball }}"
+        - "{{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
+
+- name: "Node-Exporter | install | Ensure binary ownership root:root 0755"
+  ansible.builtin.file:
+    path: "{{ __node_exporter_release_dir }}/node_exporter"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+
+- name: "Node-Exporter | install | Update active binary symlink"
+  ansible.builtin.file:
+    path: "{{ node_exporter_bin_link }}"
+    src: "{{ __node_exporter_release_dir }}/node_exporter"
+    state: link
+    force: true
+    owner: "root"
+    group: "root"
+  notify:
+    - "Node-Exporter | handlers | Restart service"

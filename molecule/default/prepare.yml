@@ -1,0 +1,10 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ensure python3-pip and ca-certificates are installed
+      ansible.builtin.package:
+        name:
+          - ca-certificates
+        state: present

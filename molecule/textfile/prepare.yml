@@ -1,0 +1,28 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ensure ca-certificates is installed
+      ansible.builtin.package:
+        name: ca-certificates
+        state: present
+
+    - name: Ensure target directory exists for pre-placed custom metric
+      ansible.builtin.file:
+        path: "/var/lib/node_exporter/textfile_collector"
+        state: directory
+        owner: "root"
+        group: "root"
+        mode: "0755"
+
+    - name: Place sample custom metric file
+      ansible.builtin.copy:
+        content: |
+          # HELP custom_test_metric Sample metric for textfile collector test.
+          # TYPE custom_test_metric gauge
+          custom_test_metric{role="node_exporter"} 42
+        dest: "/var/lib/node_exporter/textfile_collector/custom_test.prom"
+        owner: "root"
+        group: "root"
+        mode: "0644"

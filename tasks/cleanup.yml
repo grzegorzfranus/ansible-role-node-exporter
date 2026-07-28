@@ -1,0 +1,43 @@
+---
+# ==============================================================================
+# Ansible Role Version Cleanup: grzegorzfranus.node_exporter
+# ==============================================================================
+
+- name: "Node-Exporter | cleanup | Check target of current active binary symlink"
+  ansible.builtin.stat:
+    path: "{{ node_exporter_bin_link }}"
+  register: __node_exporter_active_symlink
+
+- name: "Node-Exporter | cleanup | Find installed release directories"
+  ansible.builtin.find:
+    paths: "{{ node_exporter_base_dir }}"
+    file_type: "directory"
+    patterns: "node_exporter-*.linux-*"
+  register: __node_exporter_installed_dirs
+
+- name: "Node-Exporter | cleanup | Sort installed release directories"
+  ansible.builtin.set_fact:
+    __node_exporter_sorted_dirs: >-
+      {{
+        __node_exporter_installed_dirs.files |
+        sort(attribute='mtime', reverse=true) |
+        map(attribute='path') | list
+      }}
+
+- name: "Node-Exporter | cleanup | Determine excess release directories for removal"
+  ansible.builtin.set_fact:
+    __node_exporter_dirs_to_remove: >-
+      {{
+        (__node_exporter_sorted_dirs[node_exporter_retain_versions | int:]) | default([]) |
+        reject('equalto', __node_exporter_active_symlink.stat.lnk_source | default('')) |
+        reject('equalto', __node_exporter_release_dir) | list
+      }}
+
+- name: "Node-Exporter | cleanup | Remove excess node_exporter release directories"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ __node_exporter_dirs_to_remove }}"
+  loop_control:
+    label: "{{ item | basename }}"
+  when: __node_exporter_dirs_to_remove | length > 0
