@@ -14,6 +14,8 @@
   notify:
     - "Node-Exporter | handlers | Reload systemd daemon"
     - "Node-Exporter | handlers | Restart service"
+  become: "{{ ansible_user_id != 'root' }}"
+
 - name: "Node-Exporter | service | Flush handlers"
   ansible.builtin.meta: flush_handlers
 
@@ -22,3 +24,4 @@
     name: "{{ __node_exporter_service_name }}"
     state: "{{ 'started' if (node_exporter_service_enabled | bool) else 'stopped' }}"
     enabled: "{{ node_exporter_service_enabled | bool }}"
+  become: "{{ ansible_user_id != 'root' }}"

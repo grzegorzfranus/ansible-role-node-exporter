@@ -8,6 +8,15 @@
     path: "{{ node_exporter_bin_link }}"
   register: __node_exporter_active_symlink
 
+- name: "Node-Exporter | cleanup | Determine directory path of active symlink target"
+  ansible.builtin.set_fact:
+    __node_exporter_active_dir: >-
+      {{
+        (__node_exporter_active_symlink.stat.lnk_source | dirname)
+        if (__node_exporter_active_symlink.stat.lnk_source is defined and __node_exporter_active_symlink.stat.lnk_source != "")
+        else ""
+      }}
+
 - name: "Node-Exporter | cleanup | Find installed release directories"
   ansible.builtin.find:
     paths: "{{ node_exporter_base_dir }}"
@@ -29,7 +38,7 @@
     __node_exporter_dirs_to_remove: >-
       {{
         (__node_exporter_sorted_dirs[node_exporter_retain_versions | int:]) | default([]) |
-        reject('equalto', __node_exporter_active_symlink.stat.lnk_source | default('')) |
+        reject('equalto', __node_exporter_active_dir) |
         reject('equalto', __node_exporter_release_dir) | list
       }}
 
@@ -41,3 +50,4 @@
   loop_control:
     label: "{{ item | basename }}"
   when: __node_exporter_dirs_to_remove | length > 0
+  become: "{{ ansible_user_id != 'root' }}"

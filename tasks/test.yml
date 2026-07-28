@@ -5,7 +5,12 @@
 
 - name: "Node-Exporter | test | Query metrics HTTP endpoint"
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ node_exporter_port }}{{ node_exporter_telemetry_path }}"
+    url: >-
+      http://{{
+        node_exporter_listen_address
+        if (node_exporter_listen_address is defined and node_exporter_listen_address != "" and node_exporter_listen_address != "0.0.0.0" and node_exporter_listen_address != "::")
+        else "127.0.0.1"
+      }}:{{ node_exporter_port }}{{ node_exporter_telemetry_path }}
     method: GET
     status_code: 200
     return_content: true
@@ -20,9 +25,9 @@
       - __node_exporter_metrics_response.status is defined
       - __node_exporter_metrics_response.status == 200
       - __node_exporter_metrics_response.content is defined
-      - "'node_cpu_seconds_total' in __node_exporter_metrics_response.content or 'node_exporter' in __node_exporter_metrics_response.content"
+      - "'node_cpu_seconds_total' in __node_exporter_metrics_response.content"
     fail_msg: >-
-      Health check failed: GET http://127.0.0.1:{{ node_exporter_port }}{{ node_exporter_telemetry_path }}
+      Health check failed: GET metrics endpoint
       returned status {{ __node_exporter_metrics_response.status | default('N/A') }}.
     success_msg: >-
       Health check passed: node_exporter metrics endpoint is responding with 200 OK.

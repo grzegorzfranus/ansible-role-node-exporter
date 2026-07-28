@@ -38,7 +38,10 @@
         - node_exporter_verify_checksum | bool
         - node_exporter_checksum == ""
         - not __node_exporter_binary_stat.stat.exists
+      become: "{{ ansible_user_id != 'root' }}"
 
+    # Justification: ansible.builtin.command with grep is used to extract the matching SHA256 checksum string for the target release archive from sha256sums.txt
+    # because built-in Ansible modules do not provide text parsing for checksum manifest files.
     - name: "Node-Exporter | install | Extract SHA256 checksum for target archive"
       ansible.builtin.command:
         cmd: "grep '{{ __node_exporter_tarball }}' {{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
@@ -48,26 +51,30 @@
         - node_exporter_verify_checksum | bool
         - node_exporter_checksum == ""
         - not __node_exporter_binary_stat.stat.exists
+      become: "{{ ansible_user_id != 'root' }}"
 
-    - name: "Node-Exporter | install | Set computed checksum fact"
+    - name: "Node-Exporter | install | Set computed checksum fact from explicit checksum"
       ansible.builtin.set_fact:
-        __node_exporter_effective_checksum: >-
-          {% if node_exporter_checksum is defined and node_exporter_checksum != "" %}
-          sha256:{{ node_exporter_checksum }}
-          {% elif node_exporter_verify_checksum | bool and
-                  __node_exporter_grep_checksum is defined and
-                  __node_exporter_grep_checksum.stdout is defined and
-                  __node_exporter_grep_checksum.stdout != "" %}
-          sha256:{{ __node_exporter_grep_checksum.stdout.split()[0] }}
-          {% else %}
-          {{ omit }}
-          {% endif %}
+        __node_exporter_effective_checksum: "sha256:{{ node_exporter_checksum }}"
+      when:
+        - node_exporter_checksum is defined
+        - node_exporter_checksum | length > 0
+
+    - name: "Node-Exporter | install | Set computed checksum fact from upstream sums"
+      ansible.builtin.set_fact:
+        __node_exporter_effective_checksum: "sha256:{{ __node_exporter_grep_checksum.stdout.split()[0] }}"
+      when:
+        - (node_exporter_checksum is not defined or node_exporter_checksum | length == 0)
+        - node_exporter_verify_checksum | bool
+        - __node_exporter_grep_checksum is defined
+        - __node_exporter_grep_checksum.stdout is defined
+        - __node_exporter_grep_checksum.stdout | length > 0
 
     - name: "Node-Exporter | install | Download release archive"
       ansible.builtin.get_url:
         url: "{{ __node_exporter_url }}"
         dest: "{{ node_exporter_download_dir }}/{{ __node_exporter_tarball }}"
-        checksum: "{{ __node_exporter_effective_checksum }}"
+        checksum: "{{ __node_exporter_effective_checksum | default(omit, true) }}"
         mode: "0644"
         timeout: "{{ node_exporter_download_timeout }}"
       register: __node_exporter_tarball_download
@@ -75,6 +82,7 @@
       retries: 3
       delay: 5
       when: not __node_exporter_binary_stat.stat.exists
+      become: "{{ ansible_user_id != 'root' }}"
 
     - name: "Node-Exporter | install | Extract release archive into base directory"
       ansible.builtin.unarchive:
@@ -84,8 +92,8 @@
         creates: "{{ __node_exporter_release_dir }}/node_exporter"
         owner: "root"
         group: "root"
-        mode: "0755"
       when: not __node_exporter_binary_stat.stat.exists
+      become: "{{ ansible_user_id != 'root' }}"
 
   rescue:
     - name: "Node-Exporter | install | Report download or extraction failure"
@@ -102,6 +110,7 @@
       loop:
         - "{{ node_exporter_download_dir }}/{{ __node_exporter_tarball }}"
         - "{{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
+      become: "{{ ansible_user_id != 'root' }}"
 
 - name: "Node-Exporter | install | Ensure binary ownership root:root 0755"
   ansible.builtin.file:
@@ -109,6 +118,7 @@
     owner: "root"
     group: "root"
     mode: "0755"
+  become: "{{ ansible_user_id != 'root' }}"
 
 - name: "Node-Exporter | install | Update active binary symlink"
   ansible.builtin.file:
@@ -120,3 +130,4 @@
     group: "root"
   notify:
     - "Node-Exporter | handlers | Restart service"
+  become: "{{ ansible_user_id != 'root' }}"

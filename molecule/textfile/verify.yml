@@ -8,13 +8,29 @@
         path: "/var/lib/node_exporter/textfile_collector"
       register: __verify_textfile_dir
 
-    - name: "Verify | Assert textfile directory exists"
+    - name: "Verify | Assert textfile directory exists and owned by node_exporter"
       ansible.builtin.assert:
         that:
           - __verify_textfile_dir.stat.exists
           - __verify_textfile_dir.stat.isdir
-        fail_msg: "Textfile directory /var/lib/node_exporter/textfile_collector missing."
-        success_msg: "Textfile collector directory verified."
+          - __verify_textfile_dir.stat.pw_name == 'node_exporter'
+          - __verify_textfile_dir.stat.gr_name == 'node_exporter'
+        fail_msg: "Textfile directory /var/lib/node_exporter/textfile_collector missing or invalid ownership."
+        success_msg: "Textfile collector directory verified with owner node_exporter:node_exporter."
+
+    - name: "Verify | Check systemd unit file for ReadWritePaths"
+      ansible.builtin.command:
+        cmd: "grep 'ReadWritePaths=' /etc/systemd/system/node_exporter.service"
+      register: __verify_unit_rwp
+      changed_when: false
+
+    - name: "Verify | Assert ReadWritePaths contains textfile directory"
+      ansible.builtin.assert:
+        that:
+          - __verify_unit_rwp.rc == 0
+          - "'/var/lib/node_exporter/textfile_collector' in __verify_unit_rwp.stdout"
+        fail_msg: "Systemd unit ReadWritePaths does not contain textfile collector directory."
+        success_msg: "Systemd unit ReadWritePaths successfully contains textfile collector directory."
 
     - name: "Verify | Query metrics HTTP endpoint for custom metric"
       ansible.builtin.uri:

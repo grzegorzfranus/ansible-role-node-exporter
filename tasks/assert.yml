@@ -66,6 +66,15 @@
     fail_msg: "node_exporter_retain_versions must be an integer >= 1."
     success_msg: "node_exporter_retain_versions is valid: {{ node_exporter_retain_versions }}."
 
+- name: "Node-Exporter | assert | Validate node_exporter_download_timeout"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_download_timeout is defined
+      - node_exporter_download_timeout is number
+      - node_exporter_download_timeout | int >= 1
+    fail_msg: "node_exporter_download_timeout must be a positive integer >= 1."
+    success_msg: "node_exporter_download_timeout is valid: {{ node_exporter_download_timeout }}."
+
 - name: "Node-Exporter | assert | Validate cross-field download URL and checksum"
   ansible.builtin.assert:
     that:
@@ -86,6 +95,14 @@
       - node_exporter_group | length > 0
     fail_msg: "node_exporter_user and node_exporter_group must be non-empty strings."
     success_msg: "User and group settings are valid: user='{{ node_exporter_user }}', group='{{ node_exporter_group }}'."
+
+- name: "Node-Exporter | assert | Validate node_exporter_listen_address"
+  ansible.builtin.assert:
+    that:
+      - node_exporter_listen_address is defined
+      - node_exporter_listen_address is string
+    fail_msg: "node_exporter_listen_address must be a string."
+    success_msg: "node_exporter_listen_address is valid: '{{ node_exporter_listen_address }}'."
 
 - name: "Node-Exporter | assert | Validate node_exporter_port"
   ansible.builtin.assert:
@@ -154,5 +171,6 @@
     that:
       - node_exporter_dashboard_urls is defined
       - node_exporter_dashboard_urls is sequence and not node_exporter_dashboard_urls is string
-    fail_msg: "node_exporter_dashboard_urls must be a list of HTTPS URL strings."
-    success_msg: "node_exporter_dashboard_urls is valid list."
+      - node_exporter_dashboard_urls | select('regex', '^https://') | list | length == node_exporter_dashboard_urls | length
+    fail_msg: "node_exporter_dashboard_urls must be a list of HTTPS URL strings starting with 'https://'."
+    success_msg: "node_exporter_dashboard_urls is valid list of HTTPS URLs."

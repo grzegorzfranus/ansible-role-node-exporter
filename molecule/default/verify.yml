@@ -53,8 +53,9 @@
       ansible.builtin.assert:
         that:
           - __verify_service.status.ActiveState == 'active'
-        fail_msg: "node_exporter service is not active."
-        success_msg: "node_exporter systemd service is active."
+          - __verify_service.status.UnitFileState == 'enabled' or __verify_service.status.UnitFileState == 'linked'
+        fail_msg: "node_exporter service is not active or enabled."
+        success_msg: "node_exporter systemd service is active and enabled."
 
     - name: "Verify | Query metrics HTTP endpoint"
       ansible.builtin.uri:
@@ -68,6 +69,6 @@
       ansible.builtin.assert:
         that:
           - __verify_metrics.status == 200
-          - "'node_cpu_seconds_total' in __verify_metrics.content or 'node_exporter' in __verify_metrics.content"
+          - "'node_cpu_seconds_total' in __verify_metrics.content"
         fail_msg: "Metrics endpoint GET returned status {{ __verify_metrics.status }}."
         success_msg: "Metrics endpoint returned 200 OK with expected metric data."
