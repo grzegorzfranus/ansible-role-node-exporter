@@ -7,6 +7,7 @@
   ansible.builtin.set_fact:
     __node_exporter_release_dir: "{{ node_exporter_base_dir }}/node_exporter-{{ node_exporter_version }}.linux-{{ __node_exporter_arch }}"
     __node_exporter_tarball: "node_exporter-{{ node_exporter_version }}.linux-{{ __node_exporter_arch }}.tar.gz"
+    __node_exporter_effective_checksum: ""
 
 - name: "Node-Exporter | install | Check if target version binary exists"
   ansible.builtin.stat:
@@ -40,8 +41,8 @@
         - not __node_exporter_binary_stat.stat.exists
       become: true
 
-    # Justification: ansible.builtin.command with grep is used to extract the matching SHA256 checksum string for the target release archive from sha256sums.txt
-    # because built-in Ansible modules do not provide text parsing for checksum manifest files.
+    # Justification: ansible.builtin.command with grep is used to extract the matching SHA256 checksum string for the
+    # target release archive from sha256sums.txt because built-in Ansible modules do not provide text parsing.
     - name: "Node-Exporter | install | Extract SHA256 checksum for target archive"
       ansible.builtin.command:
         cmd: "grep '{{ __node_exporter_tarball }}' {{ node_exporter_download_dir }}/node_exporter-{{ node_exporter_version }}-sha256sums.txt"
@@ -115,6 +116,7 @@
 - name: "Node-Exporter | install | Ensure binary ownership root:root 0755"
   ansible.builtin.file:
     path: "{{ __node_exporter_release_dir }}/node_exporter"
+    state: file
     owner: "root"
     group: "root"
     mode: "0755"

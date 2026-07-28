@@ -310,6 +310,9 @@ sudo systemctl restart node_exporter
 - ✅ **Service Sandboxing**: Enforces `ProtectSystem=strict`, `ProtectHome=read-only`, `PrivateTmp=true`, `PrivateDevices=true`, `NoNewPrivileges=true`, `MemoryDenyWriteExecute=true`, empty `CapabilityBoundingSet=`
 - ✅ **Checksum Verification**: Validates release archives against official `sha256sums.txt` before extraction
 
+> [!NOTE]
+> `SystemCallFilter` and `SystemCallArchitectures` directives are omitted by default in the systemd service template to prevent process termination via `SIGSYS` (exit status 31) when running in containerized environments (Docker, Colima, LXC, Kubernetes) or under architecture emulators (QEMU/Rosetta), where systemd seccomp BPF filters intercept Go runtime calls. On bare-metal or dedicated virtual machines, administrators can safely add `SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @resources @swap` via systemd drop-in overrides if additional seccomp filtering is desired.
+
 ### Enhanced Security Configuration
 
 ```yaml

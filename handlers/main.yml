@@ -15,4 +15,5 @@
   when:
     - node_exporter_service_enabled | bool
     - node_exporter_state | lower == "present"
+    - node_exporter_role_action in ["all", "service"]
   become: true

@@ -57,6 +57,20 @@
         fail_msg: "node_exporter service is not active or enabled."
         success_msg: "node_exporter systemd service is active and enabled."
 
+    - name: "Verify | Read systemd unit file contents"
+      ansible.builtin.slurp:
+        src: "/etc/systemd/system/node_exporter.service"
+      register: __verify_unit_slurp
+
+    - name: "Verify | Assert systemd unit After, Wants, and ExecStart directives"
+      ansible.builtin.assert:
+        that:
+          - "'After=network-online.target' in (__verify_unit_slurp.content | b64decode)"
+          - "'Wants=network-online.target' in (__verify_unit_slurp.content | b64decode)"
+          - "'ExecStart=/usr/local/bin/node_exporter' in (__verify_unit_slurp.content | b64decode)"
+        fail_msg: "Systemd unit file does not contain expected After, Wants, or ExecStart directives."
+        success_msg: "Systemd unit file directives (After, Wants, ExecStart) verified."
+
     - name: "Verify | Query metrics HTTP endpoint"
       ansible.builtin.uri:
         url: "http://127.0.0.1:9100/metrics"

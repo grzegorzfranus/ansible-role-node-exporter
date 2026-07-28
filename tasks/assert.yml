@@ -30,7 +30,7 @@
       - node_exporter_run_test is boolean
       - node_exporter_verify_checksum is defined
       - node_exporter_verify_checksum is boolean
-    fail_msg: "Boolean flags (node_exporter_service_enabled, node_exporter_run_test, node_exporter_verify_checksum) must be boolean."
+    fail_msg: "Boolean flags must be boolean."
     success_msg: "Boolean flags are valid."
 
 - name: "Node-Exporter | assert | Validate node_exporter_version"
@@ -38,7 +38,7 @@
     that:
       - node_exporter_version is defined
       - node_exporter_version is string
-      - node_exporter_version is regex('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - node_exporter_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
     fail_msg: "node_exporter_version must be a semantic version string (e.g. 1.9.1)."
     success_msg: "node_exporter_version is valid: '{{ node_exporter_version }}'."
 
@@ -47,15 +47,15 @@
     that:
       - node_exporter_base_dir is defined
       - node_exporter_base_dir is string
-      - node_exporter_base_dir is regex('^/')
+      - node_exporter_base_dir is match('^/')
       - node_exporter_bin_link is defined
       - node_exporter_bin_link is string
-      - node_exporter_bin_link is regex('^/')
+      - node_exporter_bin_link is match('^/')
       - node_exporter_download_dir is defined
       - node_exporter_download_dir is string
-      - node_exporter_download_dir is regex('^/')
-    fail_msg: "Paths (node_exporter_base_dir, node_exporter_bin_link, node_exporter_download_dir) must be absolute paths starting with '/'."
-    success_msg: "Paths are valid: base_dir='{{ node_exporter_base_dir }}', bin_link='{{ node_exporter_bin_link }}', download_dir='{{ node_exporter_download_dir }}'."
+      - node_exporter_download_dir is match('^/')
+    fail_msg: "Paths (base_dir, bin_link, download_dir) must be absolute paths starting with '/'."
+    success_msg: "Paths are valid."
 
 - name: "Node-Exporter | assert | Validate node_exporter_retain_versions"
   ansible.builtin.assert:
@@ -94,7 +94,7 @@
       - node_exporter_group is string
       - node_exporter_group | length > 0
     fail_msg: "node_exporter_user and node_exporter_group must be non-empty strings."
-    success_msg: "User and group settings are valid: user='{{ node_exporter_user }}', group='{{ node_exporter_group }}'."
+    success_msg: "User and group settings are valid."
 
 - name: "Node-Exporter | assert | Validate node_exporter_listen_address"
   ansible.builtin.assert:
@@ -119,7 +119,7 @@
     that:
       - node_exporter_telemetry_path is defined
       - node_exporter_telemetry_path is string
-      - node_exporter_telemetry_path is regex('^/')
+      - node_exporter_telemetry_path is match('^/')
     fail_msg: "node_exporter_telemetry_path must be an absolute URL path starting with '/'."
     success_msg: "node_exporter_telemetry_path is valid: '{{ node_exporter_telemetry_path }}'."
 
@@ -140,7 +140,7 @@
     that:
       - >-
         node_exporter_textfile_directory == "" or
-        (node_exporter_textfile_directory is regex('^/') and
+        (node_exporter_textfile_directory is match('^/') and
          node_exporter_textfile_directory in node_exporter_read_write_paths)
     fail_msg: >-
       When node_exporter_textfile_directory is configured, it must be an absolute path starting with '/'
@@ -171,6 +171,6 @@
     that:
       - node_exporter_dashboard_urls is defined
       - node_exporter_dashboard_urls is sequence and not node_exporter_dashboard_urls is string
-      - node_exporter_dashboard_urls | select('regex', '^https://') | list | length == node_exporter_dashboard_urls | length
+      - node_exporter_dashboard_urls | select('match', '^https://') | list | length == node_exporter_dashboard_urls | length
     fail_msg: "node_exporter_dashboard_urls must be a list of HTTPS URL strings starting with 'https://'."
     success_msg: "node_exporter_dashboard_urls is valid list of HTTPS URLs."

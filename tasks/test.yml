@@ -7,9 +7,14 @@
   ansible.builtin.uri:
     url: >-
       http://{{
-        node_exporter_listen_address
-        if (node_exporter_listen_address is defined and node_exporter_listen_address != "" and node_exporter_listen_address != "0.0.0.0" and node_exporter_listen_address != "::")
-        else "127.0.0.1"
+        ('[' ~ node_exporter_listen_address ~ ']')
+        if (node_exporter_listen_address is defined and ':' in node_exporter_listen_address and not node_exporter_listen_address.startswith('['))
+        else (node_exporter_listen_address
+              if (node_exporter_listen_address is defined and
+                  node_exporter_listen_address != "" and
+                  node_exporter_listen_address != "0.0.0.0" and
+                  node_exporter_listen_address != "::")
+              else "127.0.0.1")
       }}:{{ node_exporter_port }}{{ node_exporter_telemetry_path }}
     method: GET
     status_code: 200

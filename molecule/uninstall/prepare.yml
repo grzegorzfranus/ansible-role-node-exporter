@@ -6,7 +6,7 @@
     - name: Ensure sudo PAM account management permits container privilege escalation
       ansible.builtin.lineinfile:
         path: /etc/pam.d/sudo
-        regexp: '^account\s+include\s+system-auth'
+        regexp: '^(account\s+(?:include|required)\s+.*)$'
         line: 'account sufficient pam_permit.so'
       failed_when: false
 
