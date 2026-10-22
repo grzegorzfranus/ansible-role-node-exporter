@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.2](https://github.com/grzegorzfranus/ansible-role-node-exporter/compare/v2.0.1...v2.0.2) (2026-10-22)
+
+
+### Documentation
+
+* **readme:** describe the current CI and release pipelines ([#13](https://github.com/grzegorzfranus/ansible-role-node-exporter/issues/13)) ([#14](https://github.com/grzegorzfranus/ansible-role-node-exporter/issues/14)) ([50aea47](https://github.com/grzegorzfranus/ansible-role-node-exporter/commit/50aea4733698d15252ac6c96d7dce6ae1f15db68))
+
 ## [2.0.1](https://github.com/grzegorzfranus/ansible-role-node-exporter/compare/v2.0.0...v2.0.1) (2026-10-22)
 
 
