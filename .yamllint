@@ -21,5 +21,4 @@ rules:
     forbid-explicit-octal: true
 
 ignore: |
-  .github/workflows/**
   molecule/**
