@@ -2,7 +2,7 @@
 # ==============================================================================
 # Ansible Role Defaults: grzegorzfranus.node_exporter
 # ==============================================================================
-# Target OS: Ubuntu 22.04+, Debian 11+, RHEL/Rocky Linux 9+
+# Target OS: Ubuntu 22.04+, Debian 12+, RHEL/Rocky Linux 9+
 # Description: Prometheus Node Exporter daemon configuration defaults.
 # Variable Prefix: node_exporter_
 # ==============================================================================
